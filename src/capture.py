@@ -140,7 +140,8 @@ class CameraCapture:
         Open cv2.VideoCapture at camera_index.
         Raise CameraNotFoundError if cap.isOpened() is False.
         """
-        self.cap = cv2.VideoCapture(self.camera_index)
+        backend = getattr(cv2, "CAP_AVFOUNDATION", 0)
+        self.cap = cv2.VideoCapture(self.camera_index, backend)
 
         if not self.cap.isOpened():
             raise CameraNotFoundError(
@@ -148,9 +149,12 @@ class CameraCapture:
                 f"connected and not in use by another application?"
             )
 
+        fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+        self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
     def read_frame(self) -> tuple[bool, np.ndarray]:
         """Return (success, bgr_frame). Mirror of cv2.VideoCapture.read()."""

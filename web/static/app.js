@@ -95,7 +95,7 @@ async function pollStatus() {
   if (s.status === "running") {
     updateStatusPill("running", `frame ${s.frame_index}`);
   } else {
-    const tail = s.stale_seconds ? `stale ${s.stale_seconds}s` : (s.message || "no live capture");
+    const tail = s.stale_minutes != null ? `stale ${s.stale_minutes}m` : (s.message || "no live capture");
     updateStatusPill("idle", tail);
   }
 

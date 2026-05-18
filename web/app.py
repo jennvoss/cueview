@@ -58,7 +58,7 @@ def api_status():
         return jsonify({"status": "idle", "message": f"unreadable status: {e}"})
     if age > STATUS_STALE_SECONDS:
         payload["status"] = "idle"
-        payload["stale_seconds"] = round(age, 1)
+        payload["stale_minutes"] = int(age // 60)
     return jsonify(payload)
 
 
