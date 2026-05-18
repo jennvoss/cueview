@@ -168,6 +168,8 @@ async function pollShots() {
   }
 }
 
+let frameEverLoaded = false;
+
 function refreshFrame() {
   const img = $("frame");
   const empty = $("frame-empty");
@@ -177,12 +179,24 @@ function refreshFrame() {
     img.src = url;
     img.style.display = "block";
     empty.style.display = "none";
+    frameEverLoaded = true;
   };
   probe.onerror = () => {
-    img.style.display = "none";
-    empty.style.display = "block";
+    if (!frameEverLoaded) {
+      img.style.display = "none";
+      empty.style.display = "block";
+    }
   };
   probe.src = url;
+}
+
+function syncFrameWrapHeight() {
+  const img = $("frame");
+  const wrap = document.querySelector(".frame-wrap");
+  if (!img || !wrap) return;
+  if (img.offsetHeight > 0) {
+    wrap.style.minHeight = img.offsetHeight + "px";
+  }
 }
 
 (async function init() {
@@ -194,4 +208,10 @@ function refreshFrame() {
   setInterval(pollStatus, STATUS_POLL_MS);
   setInterval(pollShots, SHOTS_POLL_MS);
   setInterval(refreshFrame, FRAME_POLL_MS);
+
+  const img = $("frame");
+  if (img && "ResizeObserver" in window) {
+    new ResizeObserver(syncFrameWrapHeight).observe(img);
+  }
+  window.addEventListener("resize", syncFrameWrapHeight);
 })();

@@ -45,6 +45,7 @@ header h1 {
 .status-pill[data-state="running"] {
   background: #143324;
   color: #6eeaa3;
+  min-width: 200px;
 }
 .status-pill[data-state="running"] .dot {
   background: #2ecc71;
