@@ -9,7 +9,7 @@ calibration:
   file: config/calibration.npz
   checkerboard_rows: 6
   checkerboard_cols: 9
-  skip: false
+  skip: true
 
 detection:
   hsv_ranges:

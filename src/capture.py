@@ -50,16 +50,33 @@ def list_video_devices() -> list[dict]:
     if not cameras_list:
         return []
 
-    camera_entries = cameras_list[0].get("_items", []) if cameras_list else []
-
-    print('========', camera_entries)
+    if isinstance(cameras_list[0], dict) and "_items" in cameras_list[0]:
+        camera_entries = cameras_list[0].get("_items", [])
+    else:
+        camera_entries = cameras_list
 
     for idx, camera in enumerate(camera_entries):
         name = camera.get("_name", f"Camera {idx}")
-        vendor_id = camera.get("usb_vendor_id", "").lower()
+        vendor_id = (camera.get("usb_vendor_id") or "").lower()
 
         if not vendor_id:
-            if "logitech" in name.lower():
+            model_id = camera.get("spcamera_model-id", "")
+            m = re.search(r"VendorID_(\d+)", model_id)
+            if m:
+                try:
+                    vendor_id = f"{int(m.group(1)):04x}"
+                except ValueError:
+                    pass
+
+        if not vendor_id:
+            unique_id = camera.get("spcamera_unique-id", "")
+            m = re.search(r"([0-9a-fA-F]{4})([0-9a-fA-F]{4})$", unique_id)
+            if m:
+                vendor_id = m.group(1).lower()
+
+        if not vendor_id:
+            lname = name.lower()
+            if any(tag in lname for tag in ("logitech", "logi ", "c920", "c922", "c925", "c930", "brio")):
                 vendor_id = LOGITECH_USB_VENDOR_ID
 
         is_logitech = (vendor_id == LOGITECH_USB_VENDOR_ID)

@@ -204,9 +204,11 @@ def main():
     )
     logger = logging.getLogger(__name__)
 
-    if args.no_calibration:
+    skip_calibration = args.no_calibration or cfg["calibration"].get("skip", False)
+    if skip_calibration:
         calibration = identity_calibration()
-        logger.info("Using identity calibration (--no-calibration)")
+        reason = "--no-calibration" if args.no_calibration else "calibration.skip=true"
+        logger.info(f"Using identity calibration ({reason})")
     else:
         try:
             calibration = load_calibration(cfg["calibration"]["file"])
