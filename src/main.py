@@ -235,7 +235,7 @@ def main():
     )
     renderer = OverlayRenderer(
         enabled=cfg["output"]["overlay"],
-        table_polygon=cfg["detection"].get("table_polygon"),
+        # table_polygon=cfg["detection"].get("table_polygon"),
     )
     trail = deque(maxlen=30)
 
