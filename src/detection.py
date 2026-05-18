@@ -62,17 +62,23 @@ def detect_balls(
     hough_min_dist = config.get("hough_min_dist_px", 20)
     hough_param1 = config.get("hough_param1", 50)
     hough_param2 = config.get("hough_param2", 30)
+    table_polygon = config.get("table_polygon")
+    table_poly_np = None
+    if table_polygon:
+        table_poly_np = np.array(table_polygon, dtype=np.int32)
 
     min_radius = expected_radius_px * (1.0 - diameter_tolerance)
     max_radius = expected_radius_px * (1.0 + diameter_tolerance)
 
     detected_circles = {}
+    masks_by_label = {}
 
     for color_label, hsv_range in hsv_ranges.items():
         lower = np.array(hsv_range[0], dtype=np.uint8)
         upper = np.array(hsv_range[1], dtype=np.uint8)
 
         mask = cv2.inRange(hsv, lower, upper)
+        masks_by_label[color_label] = mask
 
         circles = cv2.HoughCircles(
             mask,
@@ -92,8 +98,29 @@ def detect_balls(
                 if circle_key not in detected_circles:
                     detected_circles[circle_key] = color_label
 
+    if table_poly_np is not None:
+        detected_circles = {
+            key: label for key, label in detected_circles.items()
+            if cv2.pointPolygonTest(table_poly_np, (key[0], key[1]), False) >= 0
+        }
+
+    cue_mask = masks_by_label.get("cue_ball")
+    best_cue_key = None
+    if cue_mask is not None:
+        best_score = -1
+        h_frame, w_frame = cue_mask.shape[:2]
+        for (x, y, r), label in detected_circles.items():
+            if label != "cue_ball":
+                continue
+            yy, xx = np.ogrid[:h_frame, :w_frame]
+            disc = (xx - x) ** 2 + (yy - y) ** 2 <= r * r
+            white_pixels = int((cue_mask[disc] > 0).sum())
+            if white_pixels > best_score:
+                best_score = white_pixels
+                best_cue_key = (x, y, r)
+
     for (x, y, r), color_label in detected_circles.items():
-        is_cue = (color_label == "cue_ball")
+        is_cue = ((x, y, r) == best_cue_key)
         detection = Detection(
             center_px=(x, y),
             radius_px=r,

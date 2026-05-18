@@ -217,7 +217,12 @@ def main():
             logger.error(f"{e}")
             sys.exit(1)
 
-    expected_radius_px = compute_expected_radius_px(calibration)
+    radius_override = cfg["detection"].get("expected_radius_px")
+    if radius_override is not None:
+        expected_radius_px = float(radius_override)
+        logger.info(f"Using detection.expected_radius_px override: {expected_radius_px} px")
+    else:
+        expected_radius_px = compute_expected_radius_px(calibration)
 
     tracker = BallTracker(
         method=cfg["tracking"]["method"],
@@ -228,7 +233,10 @@ def main():
         cfg["output"]["log_file"],
         cfg["output"]["flush_interval_s"]
     )
-    renderer = OverlayRenderer(enabled=cfg["output"]["overlay"])
+    renderer = OverlayRenderer(
+        enabled=cfg["output"]["overlay"],
+        table_polygon=cfg["detection"].get("table_polygon"),
+    )
     trail = deque(maxlen=30)
 
     try:

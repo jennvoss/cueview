@@ -85,6 +85,9 @@ def draw_ball_on_frame(frame, x, y, radius=20, is_cue_ball=True):
 def config():
     cfg = load_config("config/config.yaml")
     cfg['detection']['hough_param2'] = 20
+    cfg['detection']['hsv_ranges']['cue_ball'] = [[0, 0, 200], [180, 30, 255]]
+    cfg['detection'].pop('expected_radius_px', None)
+    cfg['metrics']['smoother_window'] = 3
     return cfg
 
 

@@ -60,8 +60,11 @@ class SessionLogger:
 
 
 class OverlayRenderer:
-    def __init__(self, enabled: bool = True):
+    def __init__(self, enabled: bool = True, table_polygon: Optional[List] = None):
         self.enabled = enabled
+        self.table_polygon = None
+        if table_polygon:
+            self.table_polygon = np.array(table_polygon, dtype=np.int32)
 
     def render(
         self,
@@ -78,6 +81,10 @@ class OverlayRenderer:
 
         if frame is None or frame.size == 0:
             return frame
+
+        if self.table_polygon is not None:
+            cv2.polylines(frame, [self.table_polygon], isClosed=True,
+                          color=(0, 165, 255), thickness=2)
 
         for ball in tracked_balls:
             center = tuple(int(x) for x in ball.center_px)

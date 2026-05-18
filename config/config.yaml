@@ -13,20 +13,34 @@ calibration:
 
 detection:
   hsv_ranges:
-    cue_ball:   [[0,0,200],   [180,30,255]]
+    cue_ball:   [[0,0,140],   [40,110,255]]
     solid_yellow: [[20,100,100],[30,255,255]]
   hough_dp: 1.2
   hough_min_dist_px: 20
   hough_param1: 50
-  hough_param2: 30
-  diameter_tolerance: 0.20
+  hough_param2: 10
+  diameter_tolerance: 0.40
+  expected_radius_px: 12
+  # Polygon (clockwise from top-left) bounding the table playing surface in
+  # pixel coordinates of the 1280x720 capture. Detections outside this polygon
+  # are discarded. Tune to match your camera angle; run scripts/show_table_polygon.py
+  # to visualize.
+  table_polygon:
+    # - [210, 150]
+    # - [1150, 145]
+    # - [1160, 615]
+    # - [220, 610]
+    - [185, 95]
+    - [1155, 100]
+    - [1165, 595]
+    - [170, 570]
 
 tracking:
   method: kalman
   max_reacquire_frames: 5
 
 metrics:
-  smoother_window: 3
+  smoother_window: 9
 
 output:
   log_file: outputs/session.jsonl
