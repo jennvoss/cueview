@@ -1,0 +1,35 @@
+camera:
+  index: 0
+  require_logitech: true
+  width: 1920
+  height: 1080
+  fps: 60
+
+calibration:
+  file: config/calibration.npz
+  checkerboard_rows: 6
+  checkerboard_cols: 9
+  skip: false
+
+detection:
+  hsv_ranges:
+    cue_ball:   [[0,0,200],   [180,30,255]]
+    solid_yellow: [[20,100,100],[30,255,255]]
+  hough_dp: 1.2
+  hough_min_dist_px: 20
+  hough_param1: 50
+  hough_param2: 30
+  diameter_tolerance: 0.20
+
+tracking:
+  method: kalman
+  max_reacquire_frames: 5
+
+metrics:
+  smoother_window: 3
+
+output:
+  log_file: outputs/session.jsonl
+  flush_interval_s: 30
+  overlay: true
+  log_level: INFO

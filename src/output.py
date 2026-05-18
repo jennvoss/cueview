@@ -1,0 +1,117 @@
+import json
+import logging
+import os
+from datetime import datetime, timezone
+from dataclasses import dataclass, asdict
+from typing import Optional, Tuple, List
+import numpy as np
+import cv2
+
+logger = logging.getLogger(__name__)
+
+REQUIRED_LOG_FIELDS = {
+    "timestamp_iso", "frame_start", "frame_end",
+    "peak_speed_mph", "mean_speed_mph", "angle_deg",
+    "start_pos_in", "end_pos_in", "accuracy_in", "target_pos_in",
+}
+
+
+@dataclass
+class ShotRecord:
+    timestamp_iso: str
+    frame_start: int
+    frame_end: int
+    peak_speed_mph: float
+    mean_speed_mph: float
+    angle_deg: float
+    start_pos_in: Tuple[float, float]
+    end_pos_in: Tuple[float, float]
+    accuracy_in: Optional[float]
+    target_pos_in: Optional[Tuple[float, float]]
+
+
+class SessionLogger:
+    def __init__(self, log_path: str, flush_interval_s: float = 30.0):
+        self.log_path = log_path
+        self.flush_interval_s = flush_interval_s
+        os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
+        self.file = open(log_path, "a")
+
+    def log_shot(self, record: ShotRecord) -> None:
+        record_dict = asdict(record)
+        record_dict["start_pos_in"] = list(record.start_pos_in)
+        record_dict["end_pos_in"] = list(record.end_pos_in)
+        if record.target_pos_in:
+            record_dict["target_pos_in"] = list(record.target_pos_in)
+
+        missing_fields = REQUIRED_LOG_FIELDS - set(record_dict.keys())
+        if missing_fields:
+            raise ValueError(f"Missing required fields: {missing_fields}")
+
+        json_line = json.dumps(record_dict)
+        self.file.write(json_line + "\n")
+
+    def flush(self) -> None:
+        self.file.flush()
+
+    def close(self) -> None:
+        self.flush()
+        self.file.close()
+
+
+class OverlayRenderer:
+    def __init__(self, enabled: bool = True):
+        self.enabled = enabled
+
+    def render(
+        self,
+        frame: np.ndarray,
+        tracked_balls: List,
+        speed_mph: float,
+        last_shot: Optional[ShotRecord],
+        trail: List[Tuple[float, float]],
+    ) -> np.ndarray:
+        if not self.enabled:
+            return frame
+
+        frame = frame.copy() if frame is not None else frame
+
+        if frame is None or frame.size == 0:
+            return frame
+
+        for ball in tracked_balls:
+            center = tuple(int(x) for x in ball.center_px)
+            radius = int(max(1, ball.radius_px if hasattr(ball, 'radius_px') else 10))
+
+            color = (0, 255, 255) if ball.is_cue_ball else (0, 255, 0)
+            cv2.circle(frame, center, radius, color, 2)
+
+        if len(trail) > 1:
+            for i in range(len(trail) - 1):
+                pt1 = tuple(int(x) for x in trail[i])
+                pt2 = tuple(int(x) for x in trail[i + 1])
+
+                alpha = (i + 1) / len(trail)
+                color_intensity = int(255 * alpha)
+                color = (0, color_intensity, 255)
+
+                cv2.line(frame, pt1, pt2, color, 1)
+
+        hud_text = f"Speed: {speed_mph:.2f} mph"
+        if last_shot:
+            hud_text += f" | Last peak: {last_shot.peak_speed_mph:.2f} mph"
+
+        cv2.putText(
+            frame,
+            hud_text,
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2,
+        )
+
+        return frame
+
+    def toggle(self) -> None:
+        self.enabled = not self.enabled

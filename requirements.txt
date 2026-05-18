@@ -1,0 +1,8 @@
+opencv-python>=4.9,<5.0
+numpy>=1.26,<2.0
+scipy>=1.12,<2.0
+filterpy>=1.4,<2.0
+pyyaml>=6.0,<7.0
+pytest>=8.0,<9.0
+pyobjc-framework-CoreMediaIO>=10.0
+flask>=3.0,<4.0

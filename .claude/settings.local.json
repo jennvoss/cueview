@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(pytest *)",
+      "Bash(/usr/bin/python3 -m pip install -q opencv-python numpy scipy filterpy pyyaml pytest)",
+      "Bash(/usr/bin/python3 *)",
+      "Bash(wait)"
+    ]
+  }
+}
