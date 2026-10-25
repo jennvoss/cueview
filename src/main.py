@@ -95,6 +95,16 @@ class StatusWriter:
                     if last_shot_dict.get(k) is not None:
                         last_shot_dict[k] = list(last_shot_dict[k])
 
+            # Add detection information
+            detections_info = []
+            for detection in detections:
+                detections_info.append({
+                    "center_px": [float(detection.center_px[0]), float(detection.center_px[1])],
+                    "radius_px": float(detection.radius_px),
+                    "is_cue_ball": bool(detection.is_cue_ball),
+                    "color_label": detection.color_label,
+                })
+
             status = {
                 "status": "running",
                 "frame_index": int(frame_index),
@@ -108,6 +118,7 @@ class StatusWriter:
                 "is_in_shot": bool(engine.is_in_shot),
                 "target_pos_in": target_pos_in,
                 "last_shot": last_shot_dict,
+                "detections": detections_info,
             }
             with open(self.status_tmp, "w") as f:
                 json.dump(status, f)

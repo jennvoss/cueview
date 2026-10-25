@@ -103,6 +103,35 @@ async function pollStatus() {
   $("cap-frame").textContent = s.frame_index ?? "—";
   $("det-count").textContent = s.detections_this_frame ?? "—";
 
+  // Display detections
+  const detections = s.detections || [];
+  const detTable = $("det-hsv"); // We can reuse this for detections too
+  if (detections.length > 0) {
+    // Update detection information display
+    const detList = document.createElement("div");
+    detList.className = "detection-list";
+    
+    detections.forEach((d, index) => {
+      const det = document.createElement("div");
+      det.className = "detection-item";
+      det.innerHTML = `
+        <strong>Detection ${index + 1}</strong> - ${d.color_label}
+        <div>Position: ${fmtPos(d.center_px)}</div>
+        <div>Radius: ${fmt(d.radius_px, 1)} px</div>
+        <div>${d.is_cue_ball ? '<span class="cue-ball">Cue Ball</span>' : ''}</div>
+      `;
+      detList.appendChild(det);
+    });
+    
+    // Clear existing content and add new content
+    const detContainer = document.getElementById("panel-detection");
+    const existingDetList = detContainer.querySelector(".detection-list");
+    if (existingDetList) {
+      existingDetList.remove();
+    }
+    detContainer.appendChild(detList);
+  }
+
   const tracks = s.tracked_balls || [];
   $("trk-count").textContent = tracks.length;
   const tbody = $("trk-table").querySelector("tbody");

@@ -198,3 +198,22 @@ code#cal-dist {
   top: 0;
   background: #11181f;
 }
+
+.detection-list {
+  margin-top: 10px;
+}
+
+.detection-item {
+  padding: 8px;
+  border-bottom: 1px solid #1f2933;
+  font-size: 12px;
+}
+
+.detection-item:last-child {
+  border-bottom: none;
+}
+
+.cue-ball {
+  color: #ffb454;
+  font-weight: 600;
+}

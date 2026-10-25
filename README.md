@@ -39,7 +39,7 @@ file you can either:
 In one terminal:
 
 ```bash
-python -m src.main
+python3 -m src.main
 ```
 
 ### CLI flags
@@ -69,7 +69,7 @@ python -m src.main
 In a **second terminal** (with the venv activated):
 
 ```bash
-python -m web.app
+python3 -m web.app
 ```
 
 Then open <http://localhost:5000>.
