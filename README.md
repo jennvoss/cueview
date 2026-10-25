@@ -63,6 +63,21 @@ python3 -m src.main
 | `q` | Quit |
 | `o` | Toggle overlay (HUD, ball annotations, trail) |
 | `t` | Set the current cue-ball position as a target — the next shot will report accuracy |
+| `p` | Print the current `table_polygon` as YAML (only with `TUNE_TABLE_POLYGON=true`) |
+
+### Tuning the table polygon
+
+Set `TUNE_TABLE_POLYGON=true` in `.env` to add x/y sliders for each
+`detection.table_polygon` corner to the capture window. They start at the values
+in `config.yaml`, and the outline and detection filter update live as you drag.
+Press `p` to print the result, then paste it into `config.yaml`. Defaults to
+`false`.
+
+`.env` is not committed; create it from the template on a fresh checkout:
+
+```bash
+cp .env.example .env
+```
 
 ## Run the browser dashboard
 

@@ -6,3 +6,4 @@ pyyaml>=6.0,<7.0
 pytest>=8.0,<9.0
 pyobjc-framework-CoreMediaIO>=10.0
 flask>=3.0,<4.0
+python-dotenv>=1.0,<2.0

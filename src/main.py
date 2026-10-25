@@ -10,6 +10,7 @@ import numpy as np
 import cv2
 from collections import deque
 from pathlib import Path
+from dotenv import load_dotenv
 
 from src.config_loader import load_config, override_config
 from src.capture import CameraCapture, find_camera_index, CameraNotFoundError
@@ -34,6 +35,49 @@ def print_shot_summary(shot) -> None:
     """Print a shot summary to stdout."""
     print(f"Shot recorded: frames {shot.frame_start}-{shot.frame_end}, "
           f"angle={shot.angle_deg:.1f}°")
+
+
+ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+
+
+# Live table_polygon tuning, enabled with TUNE_TABLE_POLYGON=true in .env.
+TUNE_POLYGON_ENV = "TUNE_TABLE_POLYGON"
+# Trackbars live on the video window: on macOS a trackbar-only window has no
+# size, and a separate window gets buried under the video window.
+POLYGON_WINDOW = "Pool Shot Capture"
+CORNER_NAMES = ("TL", "TR", "BR", "BL")
+
+
+class PolygonTuner:
+    """Trackbars for each table_polygon corner, seeded from config.yaml."""
+
+    def __init__(self, polygon, width: int, height: int):
+        cv2.namedWindow(POLYGON_WINDOW, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.moveWindow(POLYGON_WINDOW, 0, 0)
+        for name, (x, y) in zip(CORNER_NAMES, polygon):
+            cv2.createTrackbar(f"{name} x", POLYGON_WINDOW, int(x), width, lambda _v: None)
+            cv2.createTrackbar(f"{name} y", POLYGON_WINDOW, int(y), height, lambda _v: None)
+
+    def read(self) -> list:
+        return [
+            [cv2.getTrackbarPos(f"{name} x", POLYGON_WINDOW),
+             cv2.getTrackbarPos(f"{name} y", POLYGON_WINDOW)]
+            for name in CORNER_NAMES
+        ]
+
+    @staticmethod
+    def print_yaml(polygon) -> None:
+        print("  table_polygon:")
+        for x, y in polygon:
+            print(f"    - [{x}, {y}]")
+
+
+def polygon_tuning_enabled() -> bool:
+    value = os.environ.get(TUNE_POLYGON_ENV, "false").strip().lower()
+    if value not in ("true", "false"):
+        logging.getLogger(__name__).warning(
+            f"{TUNE_POLYGON_ENV}={value!r} is not true/false; treating as false")
+    return value == "true"
 
 
 class StatusWriter:
@@ -192,6 +236,7 @@ def parse_args():
 
 
 def main():
+    load_dotenv(ENV_FILE)
     args = parse_args()
 
     cfg = load_config(args.config)
@@ -242,11 +287,21 @@ def main():
         cfg["output"]["log_file"],
         cfg["output"]["flush_interval_s"]
     )
-    renderer = OverlayRenderer(
-        enabled=cfg["output"]["overlay"],
-        # table_polygon=cfg["detection"].get("table_polygon"),
-    )
+    # table_polygon is only drawn while tuning; PolygonTuner sets it each frame
+    renderer = OverlayRenderer(enabled=cfg["output"]["overlay"])
     trail = deque(maxlen=30)
+
+    polygon_tuner = None
+    if polygon_tuning_enabled():
+        default_polygon = [[0, 0], [cfg["camera"]["width"], 0],
+                           [cfg["camera"]["width"], cfg["camera"]["height"]],
+                           [0, cfg["camera"]["height"]]]
+        polygon_tuner = PolygonTuner(
+            cfg["detection"].get("table_polygon") or default_polygon,
+            cfg["camera"]["width"],
+            cfg["camera"]["height"],
+        )
+        logger.info(f"{TUNE_POLYGON_ENV} on: table_polygon sliders enabled, press 'p' to print")
 
     try:
         camera_index = find_camera_index(cfg)
@@ -284,6 +339,11 @@ def main():
                 logger.info("End of video stream")
                 break
 
+            if polygon_tuner:
+                live_polygon = polygon_tuner.read()
+                cfg["detection"]["table_polygon"] = live_polygon
+                renderer.table_polygon = np.array(live_polygon, dtype=np.int32)
+
             undistorted = undistort_frame(frame, calibration)
             detections = detect_balls(undistorted, cfg["detection"], expected_radius_px)
             tracked = tracker.update(detections)
@@ -315,6 +375,8 @@ def main():
             if key == ord('q'):
                 logger.info("Quit command received")
                 break
+            elif key == ord('p') and polygon_tuner:
+                PolygonTuner.print_yaml(live_polygon)
             elif key == ord('o'):
                 renderer.toggle()
                 logger.info(f"Overlay toggled: {renderer.enabled}")
