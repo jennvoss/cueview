@@ -32,8 +32,8 @@ def identity_calibration() -> dict:
 
 def print_shot_summary(shot) -> None:
     """Print a shot summary to stdout."""
-    print(f"Shot recorded: peak={shot.peak_speed_mph:.2f} mph, "
-          f"mean={shot.mean_speed_mph:.2f} mph, angle={shot.angle_deg:.1f}°")
+    print(f"Shot recorded: frames {shot.frame_start}-{shot.frame_end}, "
+          f"angle={shot.angle_deg:.1f}°")
 
 
 class StatusWriter:
@@ -113,8 +113,6 @@ class StatusWriter:
                 "measured_fps": round(self._measured_fps(), 2),
                 "detections_this_frame": int(len(detections)),
                 "tracked_balls": tracked_balls,
-                "current_speed_mph": float(engine.current_smoothed_speed_mph),
-                "peak_speed_mph": float(engine.peak_speed_mph),
                 "is_in_shot": bool(engine.is_in_shot),
                 "target_pos_in": target_pos_in,
                 "last_shot": last_shot_dict,
@@ -303,8 +301,6 @@ def main():
             annotated = renderer.render(
                 undistorted,
                 tracked,
-                engine.current_speed_mph(),
-                last_shot,
                 list(trail)
             )
             cv2.imshow("Pool Shot Capture", annotated)

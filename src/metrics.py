@@ -17,13 +17,18 @@ class ShotRecord:
     timestamp_iso: str
     frame_start: int
     frame_end: int
-    peak_speed_mph: float
-    mean_speed_mph: float
     angle_deg: float
     start_pos_in: tuple
     end_pos_in: tuple
     accuracy_in: Optional[float]
     target_pos_in: Optional[tuple]
+
+
+def _to_float_tuple(pos) -> Optional[tuple]:
+    # pixel_to_inches yields numpy float32, which json can't serialize
+    if pos is None:
+        return None
+    return tuple(float(v) for v in pos)
 
 
 def ips_to_mph(ips: float) -> float:
@@ -43,9 +48,6 @@ class MetricsEngine:
         self.shot_start_frame = None
         self.shot_start_pos_in = None
         self.shot_start_timestamp = None
-        self.peak_speed_mph = 0.0
-        self.speed_sum = 0.0
-        self.speed_count = 0
 
         self.target_pos_in = None
         self.current_smoothed_speed_mph = 0.0
@@ -80,14 +82,7 @@ class MetricsEngine:
             self.shot_start_frame = frame_index
             self.shot_start_pos_in = tuple(center_in)
             self.shot_start_timestamp = timestamp
-            self.peak_speed_mph = self.current_smoothed_speed_mph
-            self.speed_sum = self.current_smoothed_speed_mph
-            self.speed_count = 1
         elif self.is_in_shot:
-            self.peak_speed_mph = max(self.peak_speed_mph, self.current_smoothed_speed_mph)
-            self.speed_sum += self.current_smoothed_speed_mph
-            self.speed_count += 1
-
             if is_at_rest:
                 shot_record = self._build_shot_record(
                     frame_index,
@@ -119,13 +114,11 @@ class MetricsEngine:
         return speed_ips
 
     def _build_shot_record(self, frame_end: int, timestamp: float, end_pos_in: tuple) -> ShotRecord:
-        mean_speed_mph = self.speed_sum / self.speed_count if self.speed_count > 0 else 0.0
-
         angle_deg = self._compute_angle()
 
         accuracy_in = None
         if self.target_pos_in is not None:
-            accuracy_in = math.dist(end_pos_in, self.target_pos_in)
+            accuracy_in = float(math.dist(end_pos_in, self.target_pos_in))
 
         timestamp_iso = datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
 
@@ -133,13 +126,11 @@ class MetricsEngine:
             timestamp_iso=timestamp_iso,
             frame_start=self.shot_start_frame,
             frame_end=frame_end,
-            peak_speed_mph=self.peak_speed_mph,
-            mean_speed_mph=mean_speed_mph,
-            angle_deg=angle_deg,
-            start_pos_in=self.shot_start_pos_in,
-            end_pos_in=tuple(end_pos_in),
+            angle_deg=float(angle_deg),
+            start_pos_in=_to_float_tuple(self.shot_start_pos_in),
+            end_pos_in=_to_float_tuple(end_pos_in),
             accuracy_in=accuracy_in,
-            target_pos_in=self.target_pos_in,
+            target_pos_in=_to_float_tuple(self.target_pos_in),
         )
 
     def _compute_angle(self) -> float:

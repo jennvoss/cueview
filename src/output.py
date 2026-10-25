@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_LOG_FIELDS = {
     "timestamp_iso", "frame_start", "frame_end",
-    "peak_speed_mph", "mean_speed_mph", "angle_deg",
+    "angle_deg",
     "start_pos_in", "end_pos_in", "accuracy_in", "target_pos_in",
 }
 
@@ -21,8 +21,6 @@ class ShotRecord:
     timestamp_iso: str
     frame_start: int
     frame_end: int
-    peak_speed_mph: float
-    mean_speed_mph: float
     angle_deg: float
     start_pos_in: Tuple[float, float]
     end_pos_in: Tuple[float, float]
@@ -70,8 +68,6 @@ class OverlayRenderer:
         self,
         frame: np.ndarray,
         tracked_balls: List,
-        speed_mph: float,
-        last_shot: Optional[ShotRecord],
         trail: List[Tuple[float, float]],
     ) -> np.ndarray:
         if not self.enabled:
@@ -103,20 +99,6 @@ class OverlayRenderer:
                 color = (0, color_intensity, 255)
 
                 cv2.line(frame, pt1, pt2, color, 1)
-
-        hud_text = f"Speed: {speed_mph:.2f} mph"
-        if last_shot:
-            hud_text += f" | Last peak: {last_shot.peak_speed_mph:.2f} mph"
-
-        cv2.putText(
-            frame,
-            hud_text,
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2,
-        )
 
         return frame
 

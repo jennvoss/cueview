@@ -90,8 +90,8 @@ Each panel displays the data produced by one stage of the pipeline:
 | **Calibration** | Reprojection error, camera matrix, distortion coefficients, pixel→inch homography |
 | **Detection** | Per-frame detection count + Hough/HSV configuration |
 | **Tracking** | Currently-tracked balls (id, cue flag, pixel + inch position, frames missing) |
-| **Metrics** | Current cue-ball speed, peak speed, in-shot flag, target, last completed shot |
-| **Output** | Total shot count, mean/max peak speed, scrollable per-shot history table |
+| **Metrics** | In-shot flag, target, last completed shot |
+| **Output** | Total shot count, scrollable per-shot history table |
 
 ## Project layout
 

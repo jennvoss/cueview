@@ -148,8 +148,6 @@ async function pollStatus() {
     tbody.appendChild(tr);
   }
 
-  $("met-speed").textContent = fmt(s.current_speed_mph, 2);
-  $("met-peak").textContent = fmt(s.peak_speed_mph, 2);
   $("met-inshot").textContent = s.is_in_shot ? "yes" : "no";
   $("met-inshot").className = s.is_in_shot ? "in-shot" : "";
   $("met-target").textContent = fmtPos(s.target_pos_in);
@@ -157,9 +155,7 @@ async function pollStatus() {
   const last = s.last_shot;
   if (last) {
     $("met-last-shot").innerHTML = `
-      <div><strong>${fmt(last.peak_speed_mph, 2)}</strong> mph peak,
-           <strong>${fmt(last.mean_speed_mph, 2)}</strong> mph mean,
-           ${fmt(last.angle_deg, 1)}° angle</div>
+      <div>${fmt(last.angle_deg, 1)}° angle</div>
       <div>start ${fmtPos(last.start_pos_in)} → end ${fmtPos(last.end_pos_in)}</div>
       <div>${last.timestamp_iso || ""}</div>
       ${last.accuracy_in != null ? `<div>accuracy: ${fmt(last.accuracy_in, 2)} in</div>` : ""}`;
@@ -171,15 +167,6 @@ async function pollShots() {
   if (!data) return;
   const shots = data.shots || [];
   $("out-count").textContent = shots.length;
-  if (shots.length > 0) {
-    const peaks = shots.map((s) => s.peak_speed_mph || 0);
-    const mean = peaks.reduce((a, b) => a + b, 0) / peaks.length;
-    $("out-mean").textContent = fmt(mean, 2) + " mph";
-    $("out-max").textContent = fmt(Math.max(...peaks), 2) + " mph";
-  } else {
-    $("out-mean").textContent = "—";
-    $("out-max").textContent = "—";
-  }
   const tbody = $("out-table").querySelector("tbody");
   tbody.innerHTML = "";
   for (const s of shots) {
@@ -187,8 +174,6 @@ async function pollShots() {
     const t = (s.timestamp_iso || "").replace("T", " ").slice(0, 19);
     tr.innerHTML = `
       <td>${t}</td>
-      <td>${fmt(s.peak_speed_mph, 2)}</td>
-      <td>${fmt(s.mean_speed_mph, 2)}</td>
       <td>${fmt(s.angle_deg, 1)}</td>
       <td>${fmtPos(s.start_pos_in)}</td>
       <td>${fmtPos(s.end_pos_in)}</td>

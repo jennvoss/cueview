@@ -37,8 +37,6 @@ def _sanitize_shot_record(shot: ShotRecord) -> ShotRecord:
         timestamp_iso=shot.timestamp_iso,
         frame_start=int(shot.frame_start),
         frame_end=int(shot.frame_end),
-        peak_speed_mph=to_python_float(shot.peak_speed_mph),
-        mean_speed_mph=to_python_float(shot.mean_speed_mph),
         angle_deg=to_python_float(shot.angle_deg),
         start_pos_in=to_python_tuple(shot.start_pos_in),
         end_pos_in=to_python_tuple(shot.end_pos_in),
@@ -197,15 +195,14 @@ class TestIT_SYN_02:
             logger.close()
 
             assert len(shot_records) == 1, f"Expected 1 ShotRecord, got {len(shot_records)}"
-            assert 5.0 <= shot_records[0].peak_speed_mph <= 15.0, \
-                f"Expected peak speed 5-15 mph, got {shot_records[0].peak_speed_mph:.2f}"
+            assert shot_records[0].frame_start < shot_records[0].frame_end
 
             with open(temp_log_path, 'r') as f:
                 lines = f.readlines()
 
             assert len(lines) == 1, f"Expected 1 log line, got {len(lines)}"
             data = json.loads(lines[0])
-            assert 'peak_speed_mph' in data
+            assert 'peak_speed_mph' not in data
 
         finally:
             if os.path.exists(temp_log_path):
@@ -297,7 +294,6 @@ class TestIT_SYN_03:
 
             for line in lines:
                 data = json.loads(line)
-                assert 'peak_speed_mph' in data
                 assert 'frame_start' in data
                 assert 'frame_end' in data
 
@@ -428,8 +424,6 @@ class TestIT_SYN_05:
                 annotated = renderer.render(
                     undistorted.copy(),
                     tracked,
-                    engine.current_speed_mph(),
-                    shot,
                     list(trail),
                 )
 
