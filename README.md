@@ -121,7 +121,7 @@ poolballz/
 │   ├── calibration.py       # Intrinsics + homography
 │   ├── detection.py         # HSV + Hough circle ball detector
 │   ├── tracking.py          # Kalman cue-ball tracker + centroid matcher
-│   ├── metrics.py           # Shot detection, speed, angle, accuracy
+│   ├── metrics.py           # Shot detection, angle, accuracy
 │   ├── output.py            # Session log + overlay renderer
 │   ├── config_loader.py     # YAML loader
 │   └── constants.py         # Shared constants (table size, thresholds, ...)
