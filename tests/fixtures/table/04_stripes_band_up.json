@@ -1,0 +1,53 @@
+{
+ "image": "04_stripes_band_up.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 664.5,
+   "y": 320.5,
+   "on_table": true
+  },
+  {
+   "ball": 9,
+   "x": 310.5,
+   "y": 196.5,
+   "on_table": true
+  },
+  {
+   "ball": 10,
+   "x": 542.5,
+   "y": 191.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 786.5,
+   "y": 193.5,
+   "on_table": true
+  },
+  {
+   "ball": 12,
+   "x": 1030.5,
+   "y": 175.5,
+   "on_table": true
+  },
+  {
+   "ball": 13,
+   "x": 317.5,
+   "y": 426.5,
+   "on_table": true
+  },
+  {
+   "ball": 14,
+   "x": 540.5,
+   "y": 424.5,
+   "on_table": true
+  },
+  {
+   "ball": 15,
+   "x": 785.5,
+   "y": 433.5,
+   "on_table": true
+  }
+ ]
+}

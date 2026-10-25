@@ -1,0 +1,101 @@
+{
+ "image": "07_rack.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 426.5,
+   "y": 318.5,
+   "on_table": true
+  },
+  {
+   "ball": 1,
+   "x": 915.0,
+   "y": 318.0,
+   "on_table": true
+  },
+  {
+   "ball": 9,
+   "x": 937.5,
+   "y": 305.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 937.5,
+   "y": 331.0,
+   "on_table": true
+  },
+  {
+   "ball": 10,
+   "x": 960.0,
+   "y": 294.0,
+   "on_table": true
+  },
+  {
+   "ball": 8,
+   "x": 960.0,
+   "y": 319.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 960.0,
+   "y": 342.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 981.0,
+   "y": 281.0,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 982.5,
+   "y": 305.5,
+   "on_table": true
+  },
+  {
+   "ball": 12,
+   "x": 981.0,
+   "y": 331.0,
+   "on_table": true
+  },
+  {
+   "ball": 5,
+   "x": 982.5,
+   "y": 356.0,
+   "on_table": true
+  },
+  {
+   "ball": 13,
+   "x": 1005.0,
+   "y": 267.0,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 1005.0,
+   "y": 294.0,
+   "on_table": true
+  },
+  {
+   "ball": 14,
+   "x": 1005.0,
+   "y": 319.5,
+   "on_table": true
+  },
+  {
+   "ball": 15,
+   "x": 1005.0,
+   "y": 342.5,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 1006.0,
+   "y": 369.0,
+   "on_table": true
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "image": "11_touching.png",
+ "balls": [
+  {
+   "ball": 3,
+   "x": 522.5,
+   "y": 321.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 543.5,
+   "y": 323.5,
+   "on_table": true
+  },
+  {
+   "ball": 8,
+   "x": 764.5,
+   "y": 309.5,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 788.5,
+   "y": 311.5,
+   "on_table": true
+  },
+  {
+   "ball": "cue",
+   "x": 890.5,
+   "y": 189.5,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 917.5,
+   "y": 191.5,
+   "on_table": true
+  },
+  {
+   "ball": 14,
+   "x": 427.5,
+   "y": 408.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 414.5,
+   "y": 429.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 438.5,
+   "y": 430.5,
+   "on_table": true
+  }
+ ]
+}

@@ -1,0 +1,41 @@
+{
+ "image": "09b_near_every_pocket.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 211.5,
+   "y": 91.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 668.5,
+   "y": 82.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 1159.5,
+   "y": 89.5,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 185.5,
+   "y": 542.5,
+   "on_table": true
+  },
+  {
+   "ball": 5,
+   "x": 672.5,
+   "y": 559.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 1152.5,
+   "y": 570.5,
+   "on_table": true
+  }
+ ]
+}

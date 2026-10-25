@@ -55,7 +55,11 @@ async function loadConfigOnce() {
   const tbody = document.createElement("tbody");
   for (const [label, range] of Object.entries(hsv)) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${label}</td><td>${JSON.stringify(range.low ?? range[0])}</td><td>${JSON.stringify(range.high ?? range[1])}</td>`;
+    // A color is one [low, high] pair, or a list of pairs (e.g. red wrapping past hue 179)
+    const pairs = Array.isArray(range[0]?.[0]) ? range : [range];
+    const lows = pairs.map((p) => JSON.stringify(p.low ?? p[0])).join("<br>");
+    const highs = pairs.map((p) => JSON.stringify(p.high ?? p[1])).join("<br>");
+    tr.innerHTML = `<td>${label}</td><td>${lows}</td><td>${highs}</td>`;
     tbody.appendChild(tr);
   }
   hsvTable.appendChild(tbody);

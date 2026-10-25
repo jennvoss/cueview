@@ -64,7 +64,10 @@ def test_detect_single_white_ball(fixture_dir, test_config, calibration):
 
 
 def test_detect_16_balls(fixture_dir, test_config, calibration):
-    """UT-DET-02: detect_balls(fixture_16_balls) returns ≥14 Detections; exactly 1 has is_cue_ball=True"""
+    """UT-DET-02: detect_balls(fixture_16_balls) finds ≥11 distinct balls, none twice; exactly 1 has is_cue_ball=True.
+    Only 11 of the fixture's 16 pastel colors fall inside the test config's ranges. Earlier
+    counts were inflated by duplicates and by "balls" found as holes in the green mask,
+    which also matches this fixture's green cloth."""
     image_path = fixture_dir / "fixture_16_balls.png"
     frame = cv2.imread(str(image_path))
 
@@ -72,7 +75,11 @@ def test_detect_16_balls(fixture_dir, test_config, calibration):
 
     detections = detect_balls(frame, test_config, expected_radius)
 
-    assert len(detections) >= 14
+    centers = [d.center_px for d in detections]
+    for i, a in enumerate(centers):
+        for b in centers[i + 1:]:
+            assert np.hypot(a[0] - b[0], a[1] - b[1]) > expected_radius / 2, f"ball detected twice near {a}"
+    assert len(detections) >= 11
     cue_count = sum(1 for d in detections if d.is_cue_ball)
     assert cue_count == 1
 
@@ -125,3 +132,52 @@ def test_detect_near_rail(fixture_dir, test_config, calibration):
     detections = detect_balls(frame, test_config, expected_radius)
 
     assert len(detections) >= 3
+
+
+class TestOnTableRule:
+    """A ball counts as on the table only if most of its disc is inside table_polygon."""
+
+    POLYGON = [[100, 100], [540, 100], [540, 380], [100, 380]]
+    RADIUS = 20.0
+
+    def _frame_with_ball(self, center):
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.circle(frame, center, int(self.RADIUS), (255, 255, 255), -1)
+        return frame
+
+    def test_fraction_along_straight_edge(self):
+        from src.detection import table_mask, fraction_on_table
+        mask = table_mask((480, 640), self.POLYGON)
+        r = self.RADIUS
+        mostly_in = fraction_on_table(mask, (320.0, 100 + 0.25 * r), r)
+        mostly_out = fraction_on_table(mask, (320.0, 100 - 0.25 * r), r)
+        assert 0.55 < mostly_in < 0.75
+        assert 0.25 < mostly_out < 0.45
+        assert fraction_on_table(mask, (320.0, 240.0), r) == 1.0
+        assert fraction_on_table(mask, (10.0, 10.0), r) == 0.0
+
+    def test_ball_mostly_inside_edge_is_kept(self, test_config):
+        cfg = dict(test_config, table_polygon=self.POLYGON)
+        frame = self._frame_with_ball((320, int(100 + 0.25 * self.RADIUS)))
+        detections = detect_balls(frame, cfg, self.RADIUS)
+        assert len(detections) == 1
+
+    def test_ball_mostly_outside_edge_is_dropped(self, test_config):
+        cfg = dict(test_config, table_polygon=self.POLYGON)
+        frame = self._frame_with_ball((320, int(100 - 0.25 * self.RADIUS)))
+        assert detect_balls(frame, cfg, self.RADIUS) == []
+
+    def test_ball_fully_inside_at_corner_is_kept(self, test_config):
+        """Like the cue ball resting next to a corner pocket but on the cloth."""
+        cfg = dict(test_config, table_polygon=self.POLYGON)
+        frame = self._frame_with_ball((100 + int(self.RADIUS) + 1, 100 + int(self.RADIUS) + 1))
+        assert len(detect_balls(frame, cfg, self.RADIUS)) == 1
+
+    def test_center_inside_but_mostly_over_corner_is_dropped(self, test_config):
+        """Center is inside the polygon, but ~3/4 of the ball hangs over the corner."""
+        from src.detection import table_mask, fraction_on_table
+        cfg = dict(test_config, table_polygon=self.POLYGON)
+        center = (103, 103)
+        assert cv2.pointPolygonTest(np.array(self.POLYGON, dtype=np.int32), center, False) > 0
+        assert fraction_on_table(table_mask((480, 640), self.POLYGON), center, self.RADIUS) < 0.5
+        assert detect_balls(self._frame_with_ball(center), cfg, self.RADIUS) == []

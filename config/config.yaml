@@ -12,9 +12,20 @@ calibration:
   skip: true
 
 detection:
+  # [[H,S,V low], [H,S,V high]] per ball color (OpenCV hue 0-179), or a list of
+  # such pairs. Solids and stripes share a color; stripes' white is matched by cue_ball.
+  # Tuned against tests/fixtures/table/ on the red cloth: red must be brighter than the
+  # cloth (V >= 112), and maroon is a narrow hue band that sits just off the cloth's.
   hsv_ranges:
-    cue_ball:   [[0,0,140],   [40,110,255]]
-    solid_yellow: [[20,100,100],[30,255,255]]
+    cue_ball: [[0, 0, 170], [40, 75, 255]]
+    yellow:   [[18, 76, 150], [28, 255, 255]]
+    orange:   [[8, 90, 150], [18, 255, 255]]
+    red:      [[[0, 120, 112], [8, 255, 255]], [[170, 120, 112], [179, 255, 255]]]
+    maroon:   [[4, 100, 50], [10, 255, 110]]
+    purple:   [[112, 45, 20], [140, 255, 160]]
+    blue:     [[98, 110, 35], [118, 255, 200]]
+    green:    [[38, 40, 40], [90, 255, 200]]
+    black:    [[0, 0, 0], [179, 255, 40]]
   hough_dp: 1.2
   hough_min_dist_px: 20
   hough_param1: 50

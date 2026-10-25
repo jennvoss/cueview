@@ -1,0 +1,35 @@
+{
+ "image": "10_pocketed.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 659.5,
+   "y": 308.5,
+   "on_table": true
+  },
+  {
+   "ball": 5,
+   "x": 421.5,
+   "y": 173.5,
+   "on_table": true
+  },
+  {
+   "ball": 13,
+   "x": 908.5,
+   "y": 437.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 1149.5,
+   "y": 66.5,
+   "on_table": false
+  },
+  {
+   "ball": 10,
+   "x": 672.0,
+   "y": 585.0,
+   "on_table": false
+  }
+ ]
+}

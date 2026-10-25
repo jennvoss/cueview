@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 
 from src.config_loader import load_config
+from src.detection import hsv_range_mask
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRAME_PATH = PROJECT_ROOT / "outputs" / "latest.jpg"
@@ -44,9 +45,7 @@ def main():
 
     masks = {}
     for label, rng in hsv_ranges.items():
-        lower = np.array(rng[0], dtype=np.uint8)
-        upper = np.array(rng[1], dtype=np.uint8)
-        mask = cv2.inRange(hsv, lower, upper)
+        mask = hsv_range_mask(hsv, rng)
         masks[label] = mask
         out = DEBUG_DIR / f"mask_{label}.jpg"
         cv2.imwrite(str(out), mask)

@@ -1,0 +1,59 @@
+{
+ "image": "03_solids.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 664.5,
+   "y": 320.5,
+   "on_table": true
+  },
+  {
+   "ball": 1,
+   "x": 311.5,
+   "y": 196.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 541.5,
+   "y": 191.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 776.5,
+   "y": 189.5,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 1028.5,
+   "y": 171.5,
+   "on_table": true
+  },
+  {
+   "ball": 5,
+   "x": 302.5,
+   "y": 445.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 533.5,
+   "y": 430.5,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 798.5,
+   "y": 440.5,
+   "on_table": true
+  },
+  {
+   "ball": 8,
+   "x": 1039.5,
+   "y": 436.5,
+   "on_table": true
+  }
+ ]
+}

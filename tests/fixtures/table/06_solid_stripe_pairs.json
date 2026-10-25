@@ -1,0 +1,101 @@
+{
+ "image": "06_solid_stripe_pairs.png",
+ "balls": [
+  {
+   "ball": 1,
+   "x": 294.5,
+   "y": 194.5,
+   "on_table": true
+  },
+  {
+   "ball": 9,
+   "x": 338.5,
+   "y": 197.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 512.5,
+   "y": 188.5,
+   "on_table": true
+  },
+  {
+   "ball": 10,
+   "x": 556.5,
+   "y": 188.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 757.5,
+   "y": 193.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 808.5,
+   "y": 199.5,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 990.5,
+   "y": 174.5,
+   "on_table": true
+  },
+  {
+   "ball": 12,
+   "x": 1036.5,
+   "y": 173.5,
+   "on_table": true
+  },
+  {
+   "ball": 5,
+   "x": 297.5,
+   "y": 422.5,
+   "on_table": true
+  },
+  {
+   "ball": 13,
+   "x": 337.5,
+   "y": 421.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 514.5,
+   "y": 428.5,
+   "on_table": true
+  },
+  {
+   "ball": 14,
+   "x": 551.5,
+   "y": 422.5,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 760.5,
+   "y": 428.5,
+   "on_table": true
+  },
+  {
+   "ball": 15,
+   "x": 803.5,
+   "y": 427.5,
+   "on_table": true
+  },
+  {
+   "ball": 8,
+   "x": 984.5,
+   "y": 431.5,
+   "on_table": true
+  },
+  {
+   "ball": "cue",
+   "x": 1025.5,
+   "y": 431.5,
+   "on_table": true
+  }
+ ]
+}

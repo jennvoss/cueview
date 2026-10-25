@@ -38,6 +38,15 @@ def print_shot_summary(shot) -> None:
 
 
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+STILLS_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "table"
+
+
+def save_still(frame) -> Path:
+    """Save the raw (pre-overlay) frame as a PNG test fixture."""
+    STILLS_DIR.mkdir(parents=True, exist_ok=True)
+    path = STILLS_DIR / f"capture_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]}.png"
+    cv2.imwrite(str(path), frame)
+    return path
 
 
 # Live table_polygon tuning, enabled with TUNE_TABLE_POLYGON=true in .env.
@@ -375,6 +384,8 @@ def main():
             if key == ord('q'):
                 logger.info("Quit command received")
                 break
+            elif key == ord('s'):
+                logger.info(f"Saved still: {save_still(undistorted)}")
             elif key == ord('p') and polygon_tuner:
                 PolygonTuner.print_yaml(live_polygon)
             elif key == ord('o'):

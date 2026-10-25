@@ -1,0 +1,41 @@
+{
+ "image": "08_rails.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 424.5,
+   "y": 89.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 911.5,
+   "y": 84.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 910.0,
+   "y": 556.0,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 195.5,
+   "y": 323.5,
+   "on_table": true
+  },
+  {
+   "ball": 15,
+   "x": 1152.5,
+   "y": 314.5,
+   "on_table": true
+  },
+  {
+   "ball": "unknown",
+   "x": 1154.0,
+   "y": 571.0,
+   "on_table": false
+  }
+ ]
+}

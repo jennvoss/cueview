@@ -1,0 +1,11 @@
+{
+ "image": "02_cue_only.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 665.5,
+   "y": 320.5,
+   "on_table": true
+  }
+ ]
+}

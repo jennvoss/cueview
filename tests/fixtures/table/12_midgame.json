@@ -1,0 +1,71 @@
+{
+ "image": "12_midgame.png",
+ "balls": [
+  {
+   "ball": 14,
+   "x": 571.5,
+   "y": 124.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 512.5,
+   "y": 166.5,
+   "on_table": true
+  },
+  {
+   "ball": 12,
+   "x": 754.5,
+   "y": 137.5,
+   "on_table": true
+  },
+  {
+   "ball": "cue",
+   "x": 1034.5,
+   "y": 185.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 534.5,
+   "y": 253.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 216.5,
+   "y": 354.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 272.5,
+   "y": 418.5,
+   "on_table": true
+  },
+  {
+   "ball": 8,
+   "x": 845.5,
+   "y": 351.5,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 1055.5,
+   "y": 382.5,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 565.5,
+   "y": 489.5,
+   "on_table": true
+  },
+  {
+   "ball": 9,
+   "x": 992.5,
+   "y": 464.5,
+   "on_table": true
+  }
+ ]
+}

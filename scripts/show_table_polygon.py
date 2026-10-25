@@ -10,7 +10,8 @@ import cv2
 import numpy as np
 
 from src.config_loader import load_config
-from src.detection import detect_balls
+from src.constants import ON_TABLE_MIN_FRACTION
+from src.detection import detect_balls, table_mask, fraction_on_table
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRAME_PATH = PROJECT_ROOT / "outputs" / "latest.jpg"
@@ -43,12 +44,13 @@ def main():
     det_cfg_no_poly.pop("table_polygon", None)
     all_dets = detect_balls(bgr, det_cfg_no_poly, r)
 
+    on_table = table_mask(bgr.shape, polygon) if polygon_np is not None else None
     kept, dropped = [], []
     for d in all_dets:
-        if polygon_np is None:
+        if on_table is None:
             kept.append(d)
             continue
-        inside = cv2.pointPolygonTest(polygon_np, d.center_px, False) >= 0
+        inside = fraction_on_table(on_table, d.center_px, d.radius_px) > ON_TABLE_MIN_FRACTION
         (kept if inside else dropped).append(d)
 
     out = bgr.copy()

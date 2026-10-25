@@ -1,0 +1,71 @@
+{
+ "image": "13_cue_stick_a.png",
+ "balls": [
+  {
+   "ball": 14,
+   "x": 571.5,
+   "y": 124.5,
+   "on_table": true
+  },
+  {
+   "ball": 6,
+   "x": 513.5,
+   "y": 166.5,
+   "on_table": true
+  },
+  {
+   "ball": 12,
+   "x": 754.5,
+   "y": 137.5,
+   "on_table": true
+  },
+  {
+   "ball": "cue",
+   "x": 1034.5,
+   "y": 184.5,
+   "on_table": true
+  },
+  {
+   "ball": 2,
+   "x": 533.5,
+   "y": 252.5,
+   "on_table": true
+  },
+  {
+   "ball": 3,
+   "x": 215.5,
+   "y": 352.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 271.5,
+   "y": 419.5,
+   "on_table": true
+  },
+  {
+   "ball": 8,
+   "x": 845.5,
+   "y": 351.5,
+   "on_table": true
+  },
+  {
+   "ball": 7,
+   "x": 1052.5,
+   "y": 380.5,
+   "on_table": true
+  },
+  {
+   "ball": 4,
+   "x": 565.5,
+   "y": 488.5,
+   "on_table": true
+  },
+  {
+   "ball": 9,
+   "x": 992.5,
+   "y": 465.5,
+   "on_table": true
+  }
+ ]
+}

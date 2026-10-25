@@ -63,6 +63,7 @@ python3 -m src.main
 | `q` | Quit |
 | `o` | Toggle overlay (HUD, ball annotations, trail) |
 | `t` | Set the current cue-ball position as a target — the next shot will report accuracy |
+| `s` | Save the raw frame (no overlay) as a PNG to `tests/fixtures/table/` |
 | `p` | Print the current `table_polygon` as YAML (only with `TUNE_TABLE_POLYGON=true`) |
 
 ### Tuning the table polygon

@@ -1,0 +1,29 @@
+{
+ "image": "09_pocket_edges.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 1137.0,
+   "y": 88.0,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 668.0,
+   "y": 88.0,
+   "on_table": true
+  },
+  {
+   "ball": 1,
+   "x": 202.0,
+   "y": 85.0,
+   "on_table": false
+  },
+  {
+   "ball": 8,
+   "x": 1172.0,
+   "y": 582.0,
+   "on_table": false
+  }
+ ]
+}

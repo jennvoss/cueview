@@ -1,0 +1,53 @@
+{
+ "image": "05_stripes_white_up.png",
+ "balls": [
+  {
+   "ball": "cue",
+   "x": 665.5,
+   "y": 320.5,
+   "on_table": true
+  },
+  {
+   "ball": 9,
+   "x": 309.5,
+   "y": 193.5,
+   "on_table": true
+  },
+  {
+   "ball": 10,
+   "x": 539.5,
+   "y": 189.5,
+   "on_table": true
+  },
+  {
+   "ball": 11,
+   "x": 784.5,
+   "y": 187.5,
+   "on_table": true
+  },
+  {
+   "ball": 12,
+   "x": 1028.5,
+   "y": 173.5,
+   "on_table": true
+  },
+  {
+   "ball": 13,
+   "x": 316.5,
+   "y": 422.5,
+   "on_table": true
+  },
+  {
+   "ball": 14,
+   "x": 538.5,
+   "y": 419.5,
+   "on_table": true
+  },
+  {
+   "ball": 15,
+   "x": 788.5,
+   "y": 432.5,
+   "on_table": true
+  }
+ ]
+}
