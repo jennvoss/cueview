@@ -85,7 +85,6 @@ def config():
     cfg['detection']['hough_param2'] = 20
     cfg['detection']['hsv_ranges']['cue_ball'] = [[0, 0, 200], [180, 30, 255]]
     cfg['detection'].pop('expected_radius_px', None)
-    cfg['metrics']['smoother_window'] = 3
     return cfg
 
 
@@ -114,7 +113,7 @@ class TestIT_SYN_01:
             mock_cap = MockCameraCapture(frames, 0)
 
             tracker = BallTracker(method=config['tracking']['method'])
-            engine = MetricsEngine(calibration, config['metrics']['smoother_window'])
+            engine = MetricsEngine(calibration, expected_radius_px)
             logger = SessionLogger(temp_log_path, config['output']['flush_interval_s'])
 
             for frame_idx in range(len(frames)):
@@ -166,7 +165,7 @@ class TestIT_SYN_02:
                 frames.append(frame)
                 positions.append((current_x, start_y))
 
-            for i in range(5):
+            for i in range(40):
                 frame = create_synthetic_frame()
                 draw_ball_on_frame(frame, current_x, start_y, expected_radius_px, is_cue_ball=True)
                 frames.append(frame)
@@ -175,7 +174,7 @@ class TestIT_SYN_02:
             mock_cap = MockCameraCapture(frames, 0)
 
             tracker = BallTracker(method=config['tracking']['method'])
-            engine = MetricsEngine(calibration, config['metrics']['smoother_window'])
+            engine = MetricsEngine(calibration, expected_radius_px)
             logger = SessionLogger(temp_log_path, config['output']['flush_interval_s'])
 
             shot_records = []
@@ -235,7 +234,7 @@ class TestIT_SYN_03:
                 frames.append(frame)
                 positions.append((current_x, start_y))
 
-            for i in range(10):
+            for i in range(30):
                 frame = create_synthetic_frame()
                 draw_ball_on_frame(frame, current_x, start_y, expected_radius_px, is_cue_ball=True)
                 frames.append(frame)
@@ -257,7 +256,7 @@ class TestIT_SYN_03:
                 frames.append(frame)
                 positions.append((current_x, start_y))
 
-            for i in range(10):
+            for i in range(40):
                 frame = create_synthetic_frame()
                 draw_ball_on_frame(frame, current_x, start_y, expected_radius_px, is_cue_ball=True)
                 frames.append(frame)
@@ -266,7 +265,7 @@ class TestIT_SYN_03:
             mock_cap = MockCameraCapture(frames, 0)
 
             tracker = BallTracker(method=config['tracking']['method'])
-            engine = MetricsEngine(calibration, config['metrics']['smoother_window'])
+            engine = MetricsEngine(calibration, expected_radius_px)
             logger = SessionLogger(temp_log_path, config['output']['flush_interval_s'])
 
             shot_records = []
@@ -328,7 +327,7 @@ class TestIT_SYN_04:
                 frames.append(frame)
                 positions.append((current_x, start_y))
 
-            for i in range(5):
+            for i in range(40):
                 frame = create_synthetic_frame()
                 draw_ball_on_frame(frame, current_x, start_y, expected_radius_px, is_cue_ball=True)
                 frames.append(frame)
@@ -337,7 +336,7 @@ class TestIT_SYN_04:
             mock_cap = MockCameraCapture(frames, 0)
 
             tracker = BallTracker(method=config['tracking']['method'])
-            engine = MetricsEngine(calibration, config['metrics']['smoother_window'])
+            engine = MetricsEngine(calibration, expected_radius_px)
             logger = SessionLogger(temp_log_path, config['output']['flush_interval_s'])
 
             target_pos_in = (50.0, 25.0)
@@ -399,7 +398,7 @@ class TestIT_SYN_05:
         mock_cap = MockCameraCapture(frames, 0)
 
         tracker = BallTracker(method=config['tracking']['method'])
-        engine = MetricsEngine(calibration, config['metrics']['smoother_window'])
+        engine = MetricsEngine(calibration, expected_radius_px)
         renderer = OverlayRenderer(enabled=True)
 
         trail = deque(maxlen=30)

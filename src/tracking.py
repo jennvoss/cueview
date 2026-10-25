@@ -59,10 +59,12 @@ class BallTracker:
                     self.cue_ball_kf.predict()
                     self.cue_ball_kf.update(np.array([[x], [y]], dtype=np.float32))
 
+                # Report the filtered estimate, not the raw (noisy) detection
+                state = self.cue_ball_kf.x
                 self.tracks[self.cue_ball_id] = {
                     'is_cue_ball': True,
                     'frames_missing': 0,
-                    'last_pos': cue_ball_detection.center_px,
+                    'last_pos': (float(state[0, 0]), float(state[1, 0])),
                 }
             else:
                 # No cue ball detection this frame
@@ -202,7 +204,7 @@ class BallTracker:
         kf.R = np.eye(2, dtype=np.float32) * 5.0
 
         # Process noise
-        kf.Q = np.eye(4, dtype=np.float32) * 0.1
+        kf.Q = np.eye(4, dtype=np.float32) * 1.0
 
         # State covariance
         kf.P = np.eye(4, dtype=np.float32)

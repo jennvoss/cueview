@@ -62,7 +62,6 @@ async function loadConfigOnce() {
 
   $("trk-method").textContent = cfg.tracking?.method ?? "—";
   $("trk-reacquire").textContent = cfg.tracking?.max_reacquire_frames ?? "—";
-  $("met-smoother").textContent = cfg.metrics?.smoother_window ?? "—";
   $("out-file").textContent = cfg.output?.log_file ?? "—";
 }
 

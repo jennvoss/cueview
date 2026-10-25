@@ -122,6 +122,24 @@ class TestBallTracker:
             assert tracked_balls[0].is_cue_ball is True
             assert tracked_balls[0].frames_missing == 0
 
+    def test_reports_filtered_position(self):
+        """Stationary cue ball with ±3 px noise: reported position is the Kalman
+        estimate, so it jitters less than the raw detections."""
+        tracker = BallTracker(method="kalman")
+        rng = np.random.default_rng(0)
+
+        raw_x, reported_x = [], []
+        for _ in range(200):
+            x = 300.0 + rng.normal(0, 3.0)
+            tracker.update([Detection(center_px=(x, 200.0), radius_px=20.0,
+                                      is_cue_ball=True, color_label="cue_ball")])
+            raw_x.append(x)
+            reported_x.append(tracker.cue_ball().center_px[0])
+
+        raw_jitter = np.mean(np.abs(np.diff(raw_x[20:])))
+        reported_jitter = np.mean(np.abs(np.diff(reported_x[20:])))
+        assert reported_jitter <= 0.7 * raw_jitter
+
     def test_reset(self):
         """Test that reset() clears all tracks."""
         tracker = BallTracker(method="kalman")

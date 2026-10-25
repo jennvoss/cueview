@@ -144,6 +144,35 @@ class TestOverlayRenderer:
         assert result is not None
         assert result.shape == frame.shape
 
+    def test_smoothing_reduces_jitter(self):
+        renderer = OverlayRenderer(enabled=True)
+        rng = np.random.default_rng(0)
+        raw = [(300 + rng.uniform(-3, 3), 200 + rng.uniform(-3, 3)) for _ in range(60)]
+        drawn = [renderer._smooth_center(7, c) for c in raw]
+        raw_std = np.std([c[0] for c in raw[10:]])
+        drawn_std = np.std([c[0] for c in drawn[10:]])
+        assert drawn_std <= 0.5 * raw_std
+
+    def test_smoothing_snaps_on_large_move(self):
+        renderer = OverlayRenderer(enabled=True)
+        renderer._smooth_center(7, (100.0, 100.0))
+        assert renderer._smooth_center(7, (200.0, 100.0)) == (200.0, 100.0)
+
+    def test_smoothing_forgets_dropped_tracks(self):
+        from dataclasses import dataclass
+
+        @dataclass
+        class MockBall:
+            id: int
+            center_px: tuple
+            is_cue_ball: bool = False
+
+        renderer = OverlayRenderer(enabled=True)
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        renderer.render(frame, [MockBall(1, (100, 100)), MockBall(2, (300, 300))], [])
+        renderer.render(frame, [MockBall(2, (300, 300))], [])
+        assert set(renderer._smoothed_centers) == {2}
+
     def test_toggle(self):
         renderer = OverlayRenderer(enabled=True)
         assert renderer.enabled is True

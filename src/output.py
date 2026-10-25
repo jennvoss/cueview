@@ -57,12 +57,32 @@ class SessionLogger:
         self.file.close()
 
 
+# Drawn ball circles are smoothed per track id so Hough center noise doesn't
+# make them shake; a move larger than SNAP_DISTANCE_PX (a real roll) jumps
+# straight to the new position instead of lagging behind it.
+SMOOTHING_ALPHA = 0.25
+SNAP_DISTANCE_PX = 20.0
+
+
 class OverlayRenderer:
     def __init__(self, enabled: bool = True, table_polygon: Optional[List] = None):
         self.enabled = enabled
         self.table_polygon = None
         if table_polygon:
             self.table_polygon = np.array(table_polygon, dtype=np.int32)
+        self._smoothed_centers = {}
+
+    def _smooth_center(self, track_id, center: Tuple[float, float]) -> Tuple[float, float]:
+        if track_id is None:
+            return center
+        prev = self._smoothed_centers.get(track_id)
+        if prev is None or np.hypot(center[0] - prev[0], center[1] - prev[1]) > SNAP_DISTANCE_PX:
+            smoothed = (float(center[0]), float(center[1]))
+        else:
+            smoothed = (prev[0] + SMOOTHING_ALPHA * (center[0] - prev[0]),
+                        prev[1] + SMOOTHING_ALPHA * (center[1] - prev[1]))
+        self._smoothed_centers[track_id] = smoothed
+        return smoothed
 
     def render(
         self,
@@ -82,12 +102,19 @@ class OverlayRenderer:
             cv2.polylines(frame, [self.table_polygon], isClosed=True,
                           color=(0, 165, 255), thickness=2)
 
+        live_ids = set()
         for ball in tracked_balls:
-            center = tuple(int(x) for x in ball.center_px)
+            track_id = getattr(ball, "id", None)
+            live_ids.add(track_id)
+            center = tuple(int(round(v)) for v in self._smooth_center(track_id, ball.center_px))
             radius = int(max(1, ball.radius_px if hasattr(ball, 'radius_px') else 10))
 
             color = (0, 255, 255) if ball.is_cue_ball else (0, 255, 0)
             cv2.circle(frame, center, radius, color, 2)
+
+        for track_id in list(self._smoothed_centers):
+            if track_id not in live_ids:
+                del self._smoothed_centers[track_id]
 
         if len(trail) > 1:
             for i in range(len(trail) - 1):

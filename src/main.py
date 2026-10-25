@@ -282,7 +282,7 @@ def main():
         method=cfg["tracking"]["method"],
         max_reacquire=cfg["tracking"].get("max_reacquire_frames", 5)
     )
-    engine = MetricsEngine(calibration, cfg["metrics"]["smoother_window"])
+    engine = MetricsEngine(calibration, expected_radius_px)
     logger_output = SessionLogger(
         cfg["output"]["log_file"],
         cfg["output"]["flush_interval_s"]
