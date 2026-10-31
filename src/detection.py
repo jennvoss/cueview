@@ -3,7 +3,12 @@ import numpy as np
 import logging
 from dataclasses import dataclass, replace
 from functools import lru_cache
-from src.constants import BALL_DIAMETER_IN, ON_TABLE_MIN_FRACTION, ISOLATION_RING_MAX_FRACTION, MIN_COLOR_COVERAGE, MIN_BLACK_COVERAGE, MIN_OWN_COLOR
+from typing import Optional, Union
+from src.constants import (
+    BALL_DIAMETER_IN, ON_TABLE_MIN_FRACTION, ISOLATION_RING_MAX_FRACTION,
+    MIN_COLOR_COVERAGE, MIN_BLACK_COVERAGE, MIN_OWN_COLOR,
+    BALL_NUMBERS_BY_COLOR, STRIPE_MIN_WHITE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +19,7 @@ class Detection:
     radius_px: float
     is_cue_ball: bool
     color_label: str
+    ball: Optional[Union[int, str]] = None  # "cue", 1-15, or None if unknown
 
 
 def table_mask(shape: tuple, table_polygon) -> np.ndarray:
@@ -246,6 +252,23 @@ def _detect_balls(
     cue_keys = [key for key, label in detected_circles.items() if label == "cue_ball"]
     best_cue_key = max(cue_keys, key=cue_score) if cue_keys else None
 
+    def ball_number(center, radius, color_label, is_cue):
+        if is_cue:
+            return "cue"
+        white = fraction_on_table(white_mask, center, radius) if white_mask is not None else 0.0
+        if color_label == "cue_ball":
+            # A stripe lying white side up: name it by whatever color shows.
+            colors = {label: fraction_on_table(m, center, radius)
+                      for label, m in masks_by_label.items() if label in BALL_NUMBERS_BY_COLOR and label != "black"}
+            color_label = max(colors, key=colors.get, default=None)
+            if color_label is None or colors[color_label] == 0:
+                return None
+            return BALL_NUMBERS_BY_COLOR[color_label][1]
+        numbers = BALL_NUMBERS_BY_COLOR.get(color_label)
+        if numbers is None:
+            return None
+        return numbers[1] if white >= STRIPE_MIN_WHITE else numbers[0]
+
     for (x, y, r, _), color_label in detected_circles.items():
         is_cue = ((x, y, r, color_label) == best_cue_key)
         detection = Detection(
@@ -253,6 +276,7 @@ def _detect_balls(
             radius_px=r,
             is_cue_ball=is_cue,
             color_label=color_label,
+            ball=ball_number((x, y), r, color_label, is_cue),
         )
         detections.append(detection)
 

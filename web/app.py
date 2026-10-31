@@ -25,6 +25,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/debug")
+def debug():
+    return render_template("debug.html")
+
+
 @app.route("/api/config")
 def api_config():
     try:
@@ -48,17 +53,21 @@ def api_calibration():
 
 @app.route("/api/status")
 def api_status():
+    # "live" is true only while capture is writing fresh status; otherwise the
+    # pages show the last saved frame and say it isn't live.
     if not STATUS_PATH.exists():
-        return jsonify({"status": "idle", "message": "no live capture"})
+        return jsonify({"status": "idle", "message": "no live capture", "live": False})
     try:
         age = time.time() - STATUS_PATH.stat().st_mtime
         with open(STATUS_PATH) as f:
             payload = json.load(f)
     except (OSError, json.JSONDecodeError) as e:
-        return jsonify({"status": "idle", "message": f"unreadable status: {e}"})
+        return jsonify({"status": "idle", "message": f"unreadable status: {e}", "live": False})
     if age > STATUS_STALE_SECONDS:
         payload["status"] = "idle"
         payload["stale_minutes"] = int(age // 60)
+    source = payload.get("source") or {"kind": "camera"}
+    payload["live"] = payload.get("status") == "running" and source.get("kind") != "image"
     return jsonify(payload)
 
 

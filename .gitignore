@@ -1,3 +1,7 @@
 .DS_STORE
 .venv
 .env
+
+# Unannotated frame saved by capture for scoring without a camera
+outputs/latest_raw.png
+outputs/latest_raw.tmp.png

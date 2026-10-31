@@ -13,12 +13,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from src.config_loader import load_config, override_config
-from src.capture import CameraCapture, find_camera_index, CameraNotFoundError
+from src.capture import CameraCapture, StillImageSource, find_camera_index, CameraNotFoundError
 from src.calibration import load_calibration, undistort_frame, pixel_to_inches
 from src.detection import detect_balls, compute_expected_radius_px
 from src.tracking import BallTracker
 from src.metrics import MetricsEngine
 from src.output import SessionLogger, OverlayRenderer
+from src.scorekeeper import ScoreKeeper
 
 
 def identity_calibration() -> dict:
@@ -89,14 +90,72 @@ def polygon_tuning_enabled() -> bool:
     return value == "true"
 
 
+RAW_FRAME_NAME = "latest_raw.png"
+RAW_FRAME_INTERVAL_S = 5.0
+STILL_IMAGE_FPS = 5.0
+
+
+def find_still_image(data_dir: Path):
+    """Most recent saved frame to score when no camera is connected: the raw frame if
+    there is one, else the annotated latest.jpg (its drawn markers can skew detection)."""
+    for name in (RAW_FRAME_NAME, "latest.jpg"):
+        path = Path(data_dir) / name
+        if path.exists():
+            return path
+    return None
+
+
+def open_frame_source(args, cfg: dict, data_dir: Path, logger):
+    """Open the camera, or a still image with --image or when no camera is connected.
+    Returns (opened source, source info for status.json)."""
+    if args.image is None:
+        try:
+            cap = CameraCapture(
+                find_camera_index(cfg),
+                cfg["camera"]["width"],
+                cfg["camera"]["height"],
+                cfg["camera"]["fps"],
+            )
+            cap.open()
+            return cap, {"kind": "camera"}
+        except CameraNotFoundError as e:
+            still = find_still_image(data_dir)
+            if still is None:
+                print(f"ERROR: {e}\nNo saved frame in {data_dir} to use instead; "
+                      f"pass --image PATH to score a still image.", file=sys.stderr)
+                sys.exit(1)
+            logger.warning(f"No camera ({e}). Scoring the last saved frame instead: {still}")
+    else:
+        still = Path(args.image)
+
+    source = StillImageSource(still, fps=STILL_IMAGE_FPS)
+    try:
+        source.open()
+    except FileNotFoundError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    annotated = still.name == "latest.jpg"
+    if annotated:
+        logger.warning("This frame has detection markers drawn on it, so the score may be off. "
+                       f"Run once with the camera connected to save an unmarked {RAW_FRAME_NAME}.")
+    return source, {"kind": "image", "path": str(still), "annotated": annotated}
+
+
 class StatusWriter:
     def __init__(self, data_dir: Path, status_interval: int, write_frames: bool,
-                 calibration: dict, target_fps: float):
+                 calibration: dict, target_fps: float, source: dict = None,
+                 save_raw_frames: bool = False):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.status_path = self.data_dir / "status.json"
         self.status_tmp = self.data_dir / "status.json.tmp"
         self.frame_path = self.data_dir / "latest.jpg"
+        # Unannotated frame, saved every RAW_FRAME_INTERVAL_S while the camera runs, so
+        # the app can score from it later when no camera is connected.
+        self.raw_frame_path = self.data_dir / RAW_FRAME_NAME
+        self.save_raw_frames = save_raw_frames
+        self.last_raw_save = None
+        self.source = source or {"kind": "camera"}
         self.status_interval = status_interval
         self.write_frames = write_frames
         self.calibration = calibration
@@ -119,7 +178,8 @@ class StatusWriter:
         return (len(self.frame_times) - 1) / span
 
     def write(self, frame_index: int, tracked: list, detections: list,
-              engine: MetricsEngine, last_shot, annotated_frame) -> None:
+              engine: MetricsEngine, last_shot, annotated_frame, score: dict = None,
+              raw_frame=None) -> None:
         try:
             tracked_balls = []
             for tb in tracked:
@@ -156,6 +216,7 @@ class StatusWriter:
                     "radius_px": float(detection.radius_px),
                     "is_cue_ball": bool(detection.is_cue_ball),
                     "color_label": detection.color_label,
+                    "ball": detection.ball,
                 })
 
             status = {
@@ -170,6 +231,8 @@ class StatusWriter:
                 "target_pos_in": target_pos_in,
                 "last_shot": last_shot_dict,
                 "detections": detections_info,
+                "score": score,
+                "source": self.source,
             }
             with open(self.status_tmp, "w") as f:
                 json.dump(status, f)
@@ -183,6 +246,17 @@ class StatusWriter:
                             [cv2.IMWRITE_JPEG_QUALITY, 75])
             except Exception as e:
                 self.logger.warning(f"Failed to write latest.jpg: {e}")
+
+        now = time.monotonic()
+        if (self.save_raw_frames and raw_frame is not None
+                and (self.last_raw_save is None or now - self.last_raw_save >= RAW_FRAME_INTERVAL_S)):
+            try:
+                tmp = self.raw_frame_path.with_suffix(".tmp.png")
+                cv2.imwrite(str(tmp), raw_frame)
+                os.replace(tmp, self.raw_frame_path)
+                self.last_raw_save = now
+            except Exception as e:
+                self.logger.warning(f"Failed to write {RAW_FRAME_NAME}: {e}")
 
 
 def parse_args():
@@ -234,6 +308,13 @@ def parse_args():
         "--no-frame-dump",
         action="store_true",
         help="Skip writing outputs/latest.jpg (status JSON still written)"
+    )
+    parser.add_argument(
+        "--image",
+        type=str,
+        default=None,
+        help="Score a still image instead of the camera (default: camera, falling back "
+             "to the last saved frame when no camera is connected)"
     )
     parser.add_argument(
         "--web-data-dir",
@@ -292,6 +373,7 @@ def main():
         max_reacquire=cfg["tracking"].get("max_reacquire_frames", 5)
     )
     engine = MetricsEngine(calibration, expected_radius_px)
+    scorekeeper = ScoreKeeper()
     logger_output = SessionLogger(
         cfg["output"]["log_file"],
         cfg["output"]["flush_interval_s"]
@@ -312,31 +394,28 @@ def main():
         )
         logger.info(f"{TUNE_POLYGON_ENV} on: table_polygon sliders enabled, press 'p' to print")
 
+    if args.web_data_dir is not None:
+        web_data_dir = Path(args.web_data_dir)
+    else:
+        web_data_dir = Path(cfg["output"]["log_file"]).parent
+
+    cap, source_info = open_frame_source(args, cfg, web_data_dir, logger)
     try:
-        camera_index = find_camera_index(cfg)
-    except CameraNotFoundError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    with CameraCapture(
-        camera_index,
-        cfg["camera"]["width"],
-        cfg["camera"]["height"],
-        cfg["camera"]["fps"]
-    ) as cap:
         actual_fps = cap.actual_fps()
-        logger.info(f"Camera opened at {actual_fps} fps")
-
-        if args.web_data_dir is not None:
-            web_data_dir = Path(args.web_data_dir)
+        if source_info["kind"] == "camera":
+            logger.info(f"Camera opened at {actual_fps} fps")
         else:
-            web_data_dir = Path(cfg["output"]["log_file"]).parent
+            logger.info(f"Scoring still image {source_info['path']} (not live)")
+
         status_writer = StatusWriter(
             data_dir=web_data_dir,
             status_interval=args.status_interval,
-            write_frames=not args.no_frame_dump,
+            # Don't redraw markers onto latest.jpg when it is itself the still being scored.
+            write_frames=not args.no_frame_dump and not source_info.get("annotated", False),
             calibration=calibration,
             target_fps=actual_fps,
+            source=source_info,
+            save_raw_frames=source_info["kind"] == "camera",
         )
 
         frame_index = 0
@@ -357,6 +436,7 @@ def main():
             detections = detect_balls(undistorted, cfg["detection"], expected_radius_px)
             tracked = tracker.update(detections)
             cb = tracker.cue_ball()
+            scorekeeper.update((d.ball for d in detections), time.perf_counter())
 
             if cb:
                 trail.append(cb.center_px)
@@ -376,8 +456,12 @@ def main():
 
             status_writer.tick()
             if status_writer.should_write(frame_index):
+                # A still image is shown on the dashboard as-is; the live feed keeps
+                # its detection markers.
+                dashboard_frame = annotated if source_info["kind"] == "camera" else undistorted
                 status_writer.write(
-                    frame_index, tracked, detections, engine, last_shot, annotated
+                    frame_index, tracked, detections, engine, last_shot, dashboard_frame,
+                    score=scorekeeper.snapshot(), raw_frame=undistorted,
                 )
 
             key = cv2.waitKey(1) & 0xFF
@@ -398,6 +482,8 @@ def main():
                     logger.info(f"Target set at {pos_in}")
 
             frame_index += 1
+    finally:
+        cap.release()
 
     logger_output.close()
     cv2.destroyAllWindows()

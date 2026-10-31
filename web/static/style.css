@@ -217,3 +217,13 @@ code#cal-dist {
   color: #ffb454;
   font-weight: 600;
 }
+
+header .nav-link {
+  margin-left: auto;
+  margin-right: 16px;
+  color: #8fb3d9;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+header .nav-link:hover { text-decoration: underline; }

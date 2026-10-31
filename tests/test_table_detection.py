@@ -34,6 +34,14 @@ KNOWN_FAILURES = {
     ("no_false_positives", "13_cue_stick_a"): _CLOTH_MAROON,
     ("no_false_positives", "13_cue_stick_b"): "player over the table: watch, hair, shirt logo and arm detected as balls",
     ("cue", "06_solid_stripe_pairs"): "green-striped 14 lying white side up chosen as the cue ball",
+    ("identity", "05_stripes_white_up"): "stripes lying white side up: too little color showing to name them",
+    ("identity", "06_solid_stripe_pairs"): "white-side-up stripes misnamed; cue and 14 swapped",
+    ("identity", "07_rack"): "crowded rack: blue/purple and stripe/solid mix-ups",
+    ("identity", "08_rails"): "maroon 7 at the cushion read as the 15",
+    ("identity", "09b_near_every_pocket"): "blue 2 read as purple-striped 12",
+    ("identity", "11_touching"): "blue 2 read as the 10",
+    ("identity", "12_midgame"): "red 3 and 11 swapped",
+    ("identity", "13_cue_stick_a"): "red 3 read as the 11",
 }
 
 
@@ -137,15 +145,14 @@ def test_cue_ball_identified(name, detection_config, radius_px):
         f"actually at ({cue['x']:.0f},{cue['y']:.0f})")
 
 
-@pytest.mark.xfail(reason="ball number / solid vs stripe classification not implemented", strict=False)
-@pytest.mark.parametrize("name", CASES)
+@pytest.mark.parametrize("name", _params("identity"))
 def test_ball_identity(name, detection_config, radius_px):
     balls, detections = _run(name, detection_config, radius_px)
     on_table = [b for b in balls if b["on_table"] and b["ball"] != "cue"]
     if not on_table:
         pytest.skip("no numbered balls on the table")
+    # Only balls that were found are judged here; missing ones fail test_on_table_balls_found.
     matched = _match(on_table, detections, radius_px)
-    wrong = [f"{_fmt(b)} reported as {getattr(detections[matched[i]], 'ball', None)}"
-             for i, b in enumerate(on_table)
-             if i not in matched or getattr(detections[matched[i]], "ball", None) != b["ball"]]
+    wrong = [f"{_fmt(on_table[i])} reported as {detections[di].ball}"
+             for i, di in matched.items() if detections[di].ball != on_table[i]["ball"]]
     assert not wrong, "; ".join(wrong)

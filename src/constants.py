@@ -8,6 +8,18 @@ REST_WINDOW_S = 0.5           # ball must stay put this long to count as at rest
 REST_MAX_SPREAD_RADII = 0.5   # max distance from the window centroid while at rest
 SHOT_START_RADII = 1.0        # distance from the rest position that starts a shot
 MAX_REACQUIRE_FRAMES = 5
+# 8-ball numbering by hsv_ranges label: (solid, stripe). Black is only the 8.
+BALL_NUMBERS_BY_COLOR = {
+    "yellow": (1, 9), "blue": (2, 10), "red": (3, 11), "purple": (4, 12),
+    "orange": (5, 13), "green": (6, 14), "maroon": (7, 15), "black": (8, 8),
+}
+# A colored ball is a stripe when at least this fraction of it is white; solids show
+# only their number circle (measured max 0.14), stripes 0.13 and up.
+STRIPE_MIN_WHITE = 0.15
+# Scorekeeper: a ball counts as sunk once it hasn't been seen for SINK_AFTER_S, and
+# as back on the table once it has been seen continuously for RETURN_AFTER_S.
+SINK_AFTER_S = 3.0
+RETURN_AFTER_S = 1.0
 # A ball is on the table only if more than this fraction of its disc lies inside
 # detection.table_polygon; otherwise it is in a pocket and ignored.
 ON_TABLE_MIN_FRACTION = 0.5

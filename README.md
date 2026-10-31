@@ -55,6 +55,20 @@ python3 -m src.main
 | `--status-interval N` | `5` | Write `outputs/status.json` every N frames (0 to disable) |
 | `--no-frame-dump` | off | Skip writing `outputs/latest.jpg` (status JSON still written) |
 | `--web-data-dir PATH` | (output dir) | Override directory for `status.json` and `latest.jpg` |
+| `--image PATH` | (camera) | Score a still image instead of the camera |
+
+### Running without the camera
+
+If no camera is connected, capture doesn't exit. It scores the last saved frame
+instead, and the scoreboard marks the feed **Not live**. While the camera is
+running, capture saves an unmarked frame to `outputs/latest_raw.png` every 5 s
+for this. If that file doesn't exist yet, it falls back to `outputs/latest.jpg`,
+which has detection markers drawn on it, so the score may be off. To score any
+image, pass it directly:
+
+```bash
+python3 -m src.main --image tests/fixtures/table/12_midgame.png
+```
 
 ### Keyboard controls (with the capture window focused)
 
@@ -88,9 +102,15 @@ In a **second terminal** (with the venv activated):
 python3 -m web.app
 ```
 
-Then open <http://localhost:5000>.
+Then open:
 
-The dashboard works whether or not capture is currently running:
+- <http://localhost:5000> — **Scorekeeper** (8-ball): the camera feed on the left;
+  on the right, the balls on the table, the solids sunk, and the stripes sunk.
+  A ball counts as sunk once it hasn't been seen for 3 s, and as back on the
+  table after 1 s in view (`SINK_AFTER_S` / `RETURN_AFTER_S` in `src/constants.py`).
+- <http://localhost:5000/debug> — **Debug dashboard**, described below.
+
+The debug dashboard works whether or not capture is currently running:
 
 - **With capture running** — Capture, Detection, Tracking, and Metrics panels
   update live every ~500 ms, and the latest annotated frame is shown above the

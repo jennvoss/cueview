@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pool Shot Capture — Debug</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Pool Shot Capture</h1>
+    <a class="nav-link" href="{{ url_for('index') }}">Scoreboard →</a>
+    <div class="status-pill" id="status-pill" data-state="idle">
+      <span class="dot"></span>
+      <span id="status-label">IDLE</span>
+      <span class="meta" id="status-meta"></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="frame-panel">
+      <h2>Latest Frame</h2>
+      <div class="frame-wrap">
+        <img id="frame" alt="latest annotated frame">
+        <div class="frame-empty" id="frame-empty">No frame yet — start capture to populate.</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="panel" id="panel-capture">
+        <h2>Capture</h2>
+        <dl>
+          <dt>Camera index</dt><dd id="cap-index">—</dd>
+          <dt>Configured resolution</dt><dd id="cap-res">—</dd>
+          <dt>Target FPS</dt><dd id="cap-fps-target">—</dd>
+          <dt>Measured FPS</dt><dd id="cap-fps-measured">—</dd>
+          <dt>Frame index</dt><dd id="cap-frame">—</dd>
+          <dt>Require Logitech</dt><dd id="cap-logi">—</dd>
+        </dl>
+      </article>
+
+      <article class="panel" id="panel-calibration">
+        <h2>Calibration</h2>
+        <dl>
+          <dt>Reprojection error</dt><dd id="cal-err">—</dd>
+          <dt>File</dt><dd id="cal-file">config/calibration.npz</dd>
+        </dl>
+        <h3>Camera matrix</h3>
+        <table class="matrix" id="cal-camera-matrix"></table>
+        <h3>Distortion coefficients</h3>
+        <code id="cal-dist">—</code>
+        <h3>Homography (px → in)</h3>
+        <table class="matrix" id="cal-homography"></table>
+      </article>
+
+      <article class="panel" id="panel-detection">
+        <h2>Detection</h2>
+        <dl>
+          <dt>Detections this frame</dt><dd id="det-count">—</dd>
+          <dt>Hough dp</dt><dd id="det-dp">—</dd>
+          <dt>Hough min dist (px)</dt><dd id="det-mindist">—</dd>
+          <dt>Hough param1 / param2</dt><dd id="det-params">—</dd>
+          <dt>Diameter tolerance</dt><dd id="det-tol">—</dd>
+        </dl>
+        <h3>HSV color ranges</h3>
+        <table class="hsv" id="det-hsv"></table>
+      </article>
+
+      <article class="panel" id="panel-tracking">
+        <h2>Tracking</h2>
+        <dl>
+          <dt>Method</dt><dd id="trk-method">—</dd>
+          <dt>Max reacquire frames</dt><dd id="trk-reacquire">—</dd>
+          <dt>Currently tracked</dt><dd id="trk-count">—</dd>
+        </dl>
+        <table class="tracks" id="trk-table">
+          <thead>
+            <tr><th>ID</th><th>Cue?</th><th>px (x, y)</th><th>in (x, y)</th><th>Missing</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+
+      <article class="panel" id="panel-metrics">
+        <h2>Metrics</h2>
+        <dl>
+          <dt>In shot?</dt><dd id="met-inshot">—</dd>
+          <dt>Target position (in)</dt><dd id="met-target">—</dd>
+        </dl>
+        <h3>Last shot</h3>
+        <div id="met-last-shot" class="last-shot">no shots yet</div>
+      </article>
+
+      <article class="panel" id="panel-output">
+        <h2>Output — Session Log</h2>
+        <dl>
+          <dt>Log file</dt><dd id="out-file">—</dd>
+          <dt>Total shots</dt><dd id="out-count">0</dd>
+        </dl>
+        <div class="shots-wrap">
+          <table class="shots" id="out-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Angle°</th><th>Start (in)</th><th>End (in)</th><th>Accuracy (in)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

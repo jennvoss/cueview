@@ -7,6 +7,7 @@ from src.capture import (
     find_camera_index,
     CameraCapture,
     CameraNotFoundError,
+    StillImageSource,
 )
 
 
@@ -128,3 +129,44 @@ class TestCameraCapture:
                 pass
 
             mock_cap.release.assert_called_once()
+
+
+class TestStillImageSource:
+    @pytest.fixture
+    def image_path(self, tmp_path):
+        import cv2
+        import numpy as np
+        path = tmp_path / "still.png"
+        img = np.zeros((72, 128, 3), dtype=np.uint8)
+        img[10:20, 10:20] = (0, 0, 255)
+        cv2.imwrite(str(path), img)
+        return path
+
+    def test_serves_same_image_every_frame(self, image_path):
+        with StillImageSource(image_path, fps=1000) as source:
+            ok1, f1 = source.read_frame()
+            ok2, f2 = source.read_frame()
+        assert ok1 and ok2
+        assert f1.shape == (72, 128, 3)
+        assert (f1 == f2).all()
+        f1[:] = 0  # callers get a copy, not the stored image
+        assert f2[15, 15, 2] == 255
+
+    def test_paces_frames_to_fps(self, image_path):
+        import time
+        with StillImageSource(image_path, fps=20) as source:
+            start = time.monotonic()
+            for _ in range(5):
+                source.read_frame()
+            elapsed = time.monotonic() - start
+        assert elapsed >= 4 / 20 - 0.01  # first frame is immediate
+
+    def test_reports_fps_and_capture_time(self, image_path):
+        import os
+        os.utime(image_path, (1761400000, 1761400000))
+        with StillImageSource(image_path, fps=5) as source:
+            assert source.actual_fps() == 5
+
+    def test_missing_image_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            StillImageSource(tmp_path / "missing.png").open()

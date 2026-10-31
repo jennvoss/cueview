@@ -3,6 +3,9 @@ import subprocess
 import re
 import logging
 import json
+import time
+from datetime import datetime, timezone
+from pathlib import Path
 import numpy as np
 from src.constants import FPS_TARGET, FPS_MINIMUM
 
@@ -175,6 +178,46 @@ class CameraCapture:
         """Release VideoCapture handle."""
         if self.cap is not None:
             self.cap.release()
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, *_):
+        self.release()
+
+
+class StillImageSource:
+    """Stands in for CameraCapture when no camera is connected: serves one saved
+    frame over and over, paced to `fps`, so the rest of the pipeline (detection,
+    scorekeeping, status for the web dashboard) runs unchanged."""
+
+    def __init__(self, path, fps: float = 5.0):
+        self.path = Path(path)
+        self.fps = float(fps)
+        self.frame = None
+        self._next_time = 0.0
+
+    def open(self) -> None:
+        """Load the image. Raise FileNotFoundError if it can't be read."""
+        frame = cv2.imread(str(self.path))
+        if frame is None:
+            raise FileNotFoundError(f"Could not read still image {self.path}")
+        self.frame = frame
+
+    def read_frame(self) -> tuple[bool, np.ndarray]:
+        """Return (True, copy of the image), waiting so frames arrive at `fps`."""
+        delay = self._next_time - time.monotonic()
+        if delay > 0:
+            time.sleep(delay)
+        self._next_time = time.monotonic() + 1.0 / self.fps
+        return True, self.frame.copy()
+
+    def actual_fps(self) -> float:
+        return self.fps
+    
+    def release(self) -> None:
+        self.frame = None
 
     def __enter__(self):
         self.open()
