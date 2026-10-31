@@ -1,4 +1,4 @@
-# Pool Shot Capture — Agent Instructions
+# CueView — Agent Instructions
 
 ## Project layout
 See the repository layout in `pool_shot_capture_agent_specs.md`.

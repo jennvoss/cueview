@@ -18,7 +18,7 @@ def test_index_is_scoreboard(client):
     res = client.get("/")
     assert res.status_code == 200
     html = res.get_data(as_text=True)
-    assert "Pool Scorekeeper" in html
+    assert "<title>CueView</title>" in html
     assert 'id="feed"' in html
     for group in ("balls-table", "balls-solids", "balls-stripes"):
         assert f'id="{group}"' in html
@@ -30,6 +30,7 @@ def test_debug_is_old_dashboard(client):
     res = client.get("/debug")
     assert res.status_code == 200
     html = res.get_data(as_text=True)
+    assert "<title>CueView — Debug</title>" in html
     assert "panel-detection" in html
     assert 'href="/"' in html
 

@@ -1,9 +1,9 @@
-# Pool Shot Capture
+# CueView
 
-A real-time pool/billiards shot capture and analysis tool. A USB camera feeds the
-pipeline (capture → undistort → detect → track → measure → log), each completed
-shot is written to a session log, and a small browser dashboard surfaces what
-each stage is doing while you play.
+An automatic 8-ball scorekeeper. A camera above the pool table watches each shot,
+works out which balls went into the pockets, and keeps score in a browser
+dashboard. Under the hood, frames go through capture → undistort → detect →
+track → score, and a debug dashboard shows what each stage is doing.
 
 ## Requirements
 
@@ -16,7 +16,7 @@ each stage is doing while you play.
 
 ```bash
 git clone <this repo>            # if you haven't already
-cd poolballz
+cd cueview
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -132,7 +132,7 @@ Each panel displays the data produced by one stage of the pipeline:
 ## Project layout
 
 ```
-poolballz/
+cueview/
 ├── config/
 │   ├── config.yaml          # Tunable parameters for every stage
 │   └── calibration.npz      # (created by calibration; gitignored)

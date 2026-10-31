@@ -109,3 +109,23 @@ def test_image_run_shows_unmarked_image_on_dashboard(tmp_path, monkeypatch):
     status = json.loads((tmp_path / "status.json").read_text())
     assert status["source"]["kind"] == "image"
     assert status["score"]["solids_sunk"] == []  # 12 frames is well under SINK_AFTER_S
+
+
+def test_live_run_shows_unmarked_frame_on_dashboard(tmp_path, monkeypatch):
+    """With the camera, the dashboard frame (latest.jpg) has no detection markers either."""
+    import sys
+    from pathlib import Path
+
+    src = Path(__file__).parent / "fixtures" / "table" / "12_midgame.png"
+    fake_camera = StillImageSource(src, fps=1000.0)
+    fake_camera.open()
+    monkeypatch.setattr(main, "open_frame_source", lambda *a: (fake_camera, {"kind": "camera"}))
+    keys = iter([-1] * 11 + [ord("q")])
+    monkeypatch.setattr(main.cv2, "imshow", lambda *a: None)
+    monkeypatch.setattr(main.cv2, "waitKey", lambda *a: next(keys))
+    monkeypatch.setattr(sys, "argv", ["src.main", "--web-data-dir", str(tmp_path), "--output-dir", str(tmp_path)])
+    main.main()
+
+    shown = cv2.imread(str(tmp_path / "latest.jpg")).astype(int)
+    overlay_green = (shown[..., 1] > 200) & (shown[..., 0] < 60) & (shown[..., 2] < 60)
+    assert overlay_green.sum() == 0

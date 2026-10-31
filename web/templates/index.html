@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pool Scorekeeper</title>
+  <title>CueView</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='scoreboard.css') }}">
 </head>
 <body>
   <header>
-    <h1>Pool Scorekeeper <span class="game">8-ball</span></h1>
+    <h1>CueView <span class="game">8-ball</span></h1>
     <a class="nav-link" href="{{ url_for('debug') }}">Debug dashboard</a>
     <div class="status-pill" id="status-pill" data-state="idle">
       <span class="dot"></span>

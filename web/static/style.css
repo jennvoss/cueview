@@ -24,6 +24,8 @@ header h1 {
   font-weight: 600;
   letter-spacing: 0.3px;
 }
+header h1 { white-space: nowrap; }
+header h1 .subtitle { color: #7d8996; font-weight: 400; margin-left: 6px; }
 
 .status-pill {
   display: inline-flex;
@@ -221,6 +223,8 @@ code#cal-dist {
 header .nav-link {
   margin-left: auto;
   margin-right: 16px;
+  padding-left: 16px;
+  white-space: nowrap;
   color: #8fb3d9;
   text-decoration: none;
   font-size: 13px;

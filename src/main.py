@@ -52,9 +52,10 @@ def save_still(frame) -> Path:
 
 # Live table_polygon tuning, enabled with TUNE_TABLE_POLYGON=true in .env.
 TUNE_POLYGON_ENV = "TUNE_TABLE_POLYGON"
+APP_WINDOW = "CueView"
 # Trackbars live on the video window: on macOS a trackbar-only window has no
 # size, and a separate window gets buried under the video window.
-POLYGON_WINDOW = "Pool Shot Capture"
+POLYGON_WINDOW = APP_WINDOW
 CORNER_NAMES = ("TL", "TR", "BR", "BL")
 
 
@@ -261,7 +262,7 @@ class StatusWriter:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Pool Shot Capture — real-time ball tracking and metrics"
+        description="CueView — camera-based 8-ball scorekeeper"
     )
     parser.add_argument(
         "--camera-index",
@@ -452,15 +453,14 @@ def main():
                 tracked,
                 list(trail)
             )
-            cv2.imshow("Pool Shot Capture", annotated)
+            cv2.imshow(APP_WINDOW, annotated)
 
             status_writer.tick()
             if status_writer.should_write(frame_index):
-                # A still image is shown on the dashboard as-is; the live feed keeps
-                # its detection markers.
-                dashboard_frame = annotated if source_info["kind"] == "camera" else undistorted
+                # The dashboard shows the plain frame; detection markers stay in the
+                # capture window only.
                 status_writer.write(
-                    frame_index, tracked, detections, engine, last_shot, dashboard_frame,
+                    frame_index, tracked, detections, engine, last_shot, undistorted,
                     score=scorekeeper.snapshot(), raw_frame=undistorted,
                 )
 
