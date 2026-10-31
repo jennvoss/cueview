@@ -83,6 +83,7 @@ header h1 .game { color: var(--muted); font-weight: 400; margin-left: 6px; }
   padding: 24px; text-align: center; color: var(--muted);
 }
 
+.live { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .score { display: flex; flex-direction: column; gap: 14px; }
 
 .score-note { color: var(--muted); font-size: 13px; }
@@ -104,6 +105,14 @@ header h1 .game { color: var(--muted); font-weight: 400; margin-left: 6px; }
 }
 .group h2 .sub { text-transform: none; letter-spacing: 0; font-weight: 400; }
 .group h2 .count { margin-left: auto; color: var(--text); font-size: 15px; letter-spacing: 0; }
+
+/* "On the table" under the feed: a little smaller than the sunk-ball sections. */
+.group.compact { padding: 10px 14px 12px; }
+.group.compact h2 { margin-bottom: 10px; font-size: 12px; }
+.group.compact h2 .count { font-size: 14px; }
+.group.compact .balls { gap: 8px; min-height: 36px; }
+.group.compact .ball:not(.mini) { width: 36px; height: 36px; }
+.group.compact .ball .num { font-size: 10px; }
 
 .cue-chip {
   display: inline-flex; align-items: center; gap: 6px;

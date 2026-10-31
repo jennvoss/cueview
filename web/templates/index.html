@@ -17,23 +17,26 @@
   </header>
 
   <main class="layout">
-    <section class="feed" aria-label="Camera feed">
-      <img id="feed" alt="Camera view of the table">
-      <div class="feed-badge" id="feed-badge" hidden></div>
-      <div class="feed-empty" id="feed-empty">No camera feed yet. Start capture with <code>python3 -m src.main</code>.</div>
-    </section>
+    <div class="live">
+      <section class="feed" aria-label="Camera feed">
+        <img id="feed" alt="Camera view of the table">
+        <div class="feed-badge" id="feed-badge" hidden></div>
+        <div class="feed-empty" id="feed-empty">No camera feed yet. Start capture with <code>python3 -m src.main</code>.</div>
+      </section>
 
-    <section class="score" aria-label="Score">
-      <div class="score-note" id="score-note" hidden></div>
       <div class="notice" id="notice" hidden></div>
 
-      <article class="group" id="group-table">
+      <article class="group compact" id="group-table">
         <h2>On the table
           <span class="cue-chip" id="cue-chip" hidden title="Cue ball is on the table"><span class="ball cue mini"></span>Cue</span>
           <span class="count" id="count-table"></span>
         </h2>
         <div class="balls" id="balls-table"></div>
       </article>
+    </div>
+
+    <section class="score" aria-label="Score">
+      <div class="score-note" id="score-note" hidden></div>
 
       <article class="group" id="group-solids">
         <h2>Solids <span class="sub">sunk</span> <span class="count" id="count-solids"></span></h2>
