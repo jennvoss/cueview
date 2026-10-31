@@ -24,24 +24,19 @@ TABLE_DIR = Path(__file__).parent / "fixtures" / "table"
 CASES = sorted(p.stem for p in TABLE_DIR.glob("*.json"))
 
 # (check, image) -> reason it fails today
-_CLOTH_MAROON = "maroon range picks up a patch of the red cloth"
+_STRIPE_11_TWICE = "red-striped 11 also picked up as a second, offset maroon circle"
 KNOWN_FAILURES = {
-    ("found", "07_rack"): "maroon 7 at the back corner of the rack not detected",
+    ("found", "07_rack"): "purple-striped 12 inside the rack not detected",
     ("found", "08_rails"): "maroon-striped 15 against the right cushion not detected",
     ("found", "09b_near_every_pocket"): "red 3 in the shadow of the top-right pocket is darker than the red range allows",
-    ("no_false_positives", "06_solid_stripe_pairs"): _CLOTH_MAROON + " near the bottom-right pocket",
-    ("no_false_positives", "12_midgame"): _CLOTH_MAROON,
-    ("no_false_positives", "13_cue_stick_a"): _CLOTH_MAROON,
-    ("no_false_positives", "13_cue_stick_b"): "player over the table: watch, hair, shirt logo and arm detected as balls",
-    ("cue", "06_solid_stripe_pairs"): "green-striped 14 lying white side up chosen as the cue ball",
+    ("no_false_positives", "07_rack"): "crowded rack: an extra blue circle between balls",
+    ("no_false_positives", "12_midgame"): _STRIPE_11_TWICE,
+    ("no_false_positives", "13_cue_stick_b"): "player over the table: watch, arm and cue stick detected as balls; " + _STRIPE_11_TWICE,
+    ("cue", "05_stripes_white_up"): "blue-striped 10 lying white side up chosen as the cue ball",
     ("identity", "05_stripes_white_up"): "stripes lying white side up: too little color showing to name them",
-    ("identity", "06_solid_stripe_pairs"): "white-side-up stripes misnamed; cue and 14 swapped",
-    ("identity", "07_rack"): "crowded rack: blue/purple and stripe/solid mix-ups",
-    ("identity", "08_rails"): "maroon 7 at the cushion read as the 15",
-    ("identity", "09b_near_every_pocket"): "blue 2 read as purple-striped 12",
-    ("identity", "11_touching"): "blue 2 read as the 10",
-    ("identity", "12_midgame"): "red 3 and 11 swapped",
-    ("identity", "13_cue_stick_a"): "red 3 read as the 11",
+    ("identity", "06_solid_stripe_pairs"): "stripes lying white side up left unnamed or misnamed",
+    ("identity", "07_rack"): "crowded rack: orange-striped 13 read as the 15",
+    ("identity", "13_cue_stick_b"): "9 lying white side up left unnamed",
 }
 
 

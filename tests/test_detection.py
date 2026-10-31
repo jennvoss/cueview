@@ -181,3 +181,44 @@ class TestOnTableRule:
         assert cv2.pointPolygonTest(np.array(self.POLYGON, dtype=np.int32), center, False) > 0
         assert fraction_on_table(table_mask((480, 640), self.POLYGON), center, self.RADIUS) < 0.5
         assert detect_balls(self._frame_with_ball(center), cfg, self.RADIUS) == []
+
+
+class TestLightingChanges:
+    """Frames are color-corrected to the cloth, so a dimmer or warmer room still works."""
+
+    TABLE = Path(__file__).parent / "fixtures" / "table"
+
+    @pytest.fixture
+    def real_config(self):
+        from src.config_loader import load_config
+        return load_config("config/config.yaml")["detection"]
+
+    @staticmethod
+    def _relight(img, gains_bgr):
+        return np.clip(img.astype(np.float32) * np.array(gains_bgr, dtype=np.float32), 0, 255).astype(np.uint8)
+
+    def test_correction_restores_cloth_color(self, real_config):
+        from src.constants import CLOTH_REFERENCE_BGR
+        from src.detection import correct_to_cloth, table_mask
+        img = self._relight(cv2.imread(str(self.TABLE / "03_solids.png")), (0.6, 0.65, 0.7))
+        fixed = correct_to_cloth(img, real_config["table_polygon"])
+        inside = cv2.erode(table_mask(img.shape, real_config["table_polygon"]), None, iterations=20) > 0
+        assert np.allclose(np.median(fixed[inside], axis=0), CLOTH_REFERENCE_BGR, atol=2)
+
+    @pytest.mark.parametrize("gains", [(0.6, 0.65, 0.7), (0.8, 0.95, 1.1)], ids=["dim", "warm"])
+    def test_detection_survives_lighting_change(self, real_config, gains):
+        """Like turning the room lights down, or switching to a warmer bulb."""
+        img = cv2.imread(str(self.TABLE / "03_solids.png"))
+        expected = {(d.ball, round(d.center_px[0] / 6), round(d.center_px[1] / 6))
+                    for d in detect_balls(img, real_config, 12.0)}
+        relit = {(d.ball, round(d.center_px[0] / 6), round(d.center_px[1] / 6))
+                 for d in detect_balls(self._relight(img, gains), real_config, 12.0)}
+        assert {b for b, _, _ in relit} == {b for b, _, _ in expected}
+
+    def test_highlight_separates_ball_from_cloth(self):
+        from src.detection import highlight_above_surroundings
+        value = np.full((100, 100), 80, dtype=np.uint8)
+        cv2.circle(value, (50, 50), 12, 70, -1)    # dark ball, same tone as cloth
+        assert highlight_above_surroundings(value, (50, 50), 12.0) < 10
+        cv2.circle(value, (46, 46), 3, 220, -1)    # the lamp's reflection on a real ball
+        assert highlight_above_surroundings(value, (50, 50), 12.0) > 100

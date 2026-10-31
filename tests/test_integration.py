@@ -85,6 +85,9 @@ def config():
     cfg['detection']['hough_param2'] = 20
     cfg['detection']['hsv_ranges']['cue_ball'] = [[0, 0, 200], [180, 30, 255]]
     cfg['detection'].pop('expected_radius_px', None)
+    # Synthetic 640x480 green frames aren't the real table: its outline (and the cloth
+    # color correction that relies on it) doesn't apply.
+    cfg['detection'].pop('table_polygon', None)
     return cfg
 
 

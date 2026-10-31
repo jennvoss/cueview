@@ -8,6 +8,7 @@ from src.constants import (
     BALL_DIAMETER_IN, ON_TABLE_MIN_FRACTION, ISOLATION_RING_MAX_FRACTION,
     MIN_COLOR_COVERAGE, MIN_BLACK_COVERAGE, MIN_OWN_COLOR,
     BALL_NUMBERS_BY_COLOR, STRIPE_MIN_WHITE,
+    CLOTH_REFERENCE_BGR, CLOTH_GAIN_LIMITS, MAROON_MIN_HIGHLIGHT, BLUE_PURPLE_HUE_SPLIT,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,44 @@ def hsv_range_mask(hsv: np.ndarray, hsv_range) -> np.ndarray:
     return mask
 
 
+@lru_cache(maxsize=8)
+def _cloth_sample_index(shape: tuple, polygon: tuple):
+    """Pixel indices (every 3rd row/column) well inside the table, used to measure the cloth."""
+    inside = cv2.erode(table_mask(shape, [list(p) for p in polygon]), None, iterations=20)
+    ys, xs = np.nonzero(inside[::3, ::3])
+    return ys * 3, xs * 3
+
+
+def correct_to_cloth(frame: np.ndarray, table_polygon) -> np.ndarray:
+    """Scale each color channel so the cloth's median color matches CLOTH_REFERENCE_BGR,
+    undoing changes in room brightness and light color before the HSV ranges are applied."""
+    ys, xs = _cloth_sample_index(frame.shape[:2], tuple(tuple(p) for p in table_polygon))
+    if len(ys) == 0:
+        return frame
+    cloth = np.median(frame[ys, xs], axis=0)
+    gains = np.clip(np.array(CLOTH_REFERENCE_BGR) / np.maximum(cloth, 1.0), *CLOTH_GAIN_LIMITS)
+    levels = np.arange(256, dtype=np.float32)
+    lut = np.stack([np.clip(levels * g, 0, 255) for g in gains], axis=1).astype(np.uint8)
+    return cv2.LUT(frame, lut.reshape(256, 1, 3))
+
+
+def highlight_above_surroundings(value: np.ndarray, center: tuple, radius: float) -> float:
+    """Brightest spot in the disc (97th percentile of V) minus the median V of a ring of
+    cloth around it (1.5-2.2 radii). Real balls show the overhead lamp; cloth doesn't."""
+    def values(outer, inner=0.0):
+        half, template, _ = _disc_template(int(round(outer * 4)), int(round(inner * 4)))
+        cx, cy = int(round(center[0])), int(round(center[1]))
+        h, w = value.shape[:2]
+        x0, x1 = max(cx - half, 0), min(cx + half + 1, w)
+        y0, y1 = max(cy - half, 0), min(cy + half + 1, h)
+        window = template[y0 - (cy - half):y1 - (cy - half), x0 - (cx - half):x1 - (cx - half)]
+        return value[y0:y1, x0:x1][window]
+    disc, ring = values(radius), values(2.2 * radius, 1.5 * radius)
+    if disc.size == 0 or ring.size == 0:
+        return 0.0
+    return float(np.percentile(disc, 97)) - float(np.median(ring))
+
+
 def compute_expected_radius_px(calibration: dict) -> float:
     """
     Use homography inverse to convert BALL_DIAMETER_IN to pixel radius.
@@ -110,7 +149,8 @@ def detect_balls(
     x1 = min(int(poly[:, 0].max()) + margin, w)
     y1 = min(int(poly[:, 1].max()) + margin, h)
     cropped = dict(config, table_polygon=(poly - [x0, y0]).tolist())
-    detections = _detect_balls(frame[y0:y1, x0:x1], cropped, expected_radius_px)
+    region = correct_to_cloth(frame[y0:y1, x0:x1], cropped["table_polygon"])
+    detections = _detect_balls(region, cropped, expected_radius_px)
     return [replace(d, center_px=(d.center_px[0] + x0, d.center_px[1] + y0)) for d in detections]
 
 
@@ -230,6 +270,9 @@ def _detect_balls(
             continue
         if label != "cue_ball" and fraction_on_table(masks_by_label[label], (key[0], key[1]), key[2]) < MIN_OWN_COLOR:
             continue
+        if label == "maroon" and highlight_above_surroundings(
+                hsv[..., 2], (key[0], key[1]), expected_radius_px) < MAROON_MIN_HIGHLIGHT:
+            continue
         if all(np.hypot(key[0] - k[0], key[1] - k[1]) > expected_radius_px for k in merged):
             merged[key] = detected_circles[key]
     detected_circles = merged
@@ -252,10 +295,27 @@ def _detect_balls(
     cue_keys = [key for key, label in detected_circles.items() if label == "cue_ball"]
     best_cue_key = max(cue_keys, key=cue_score) if cue_keys else None
 
+    def resolve_blue_purple(center, radius, color_label):
+        """Blue and purple ranges overlap; pick by the median hue of those pixels instead."""
+        if color_label not in ("blue", "purple") or "blue" not in masks_by_label or "purple" not in masks_by_label:
+            return color_label
+        half, template, _ = _disc_template(int(round(radius * 4)), 0)
+        cx, cy = int(round(center[0])), int(round(center[1]))
+        h, w = hsv.shape[:2]
+        x0, x1 = max(cx - half, 0), min(cx + half + 1, w)
+        y0, y1 = max(cy - half, 0), min(cy + half + 1, h)
+        window = template[y0 - (cy - half):y1 - (cy - half), x0 - (cx - half):x1 - (cx - half)]
+        either = (masks_by_label["blue"] | masks_by_label["purple"])[y0:y1, x0:x1] > 0
+        hues = hsv[y0:y1, x0:x1, 0][window & either]
+        if hues.size == 0:
+            return color_label
+        return "blue" if np.median(hues) < BLUE_PURPLE_HUE_SPLIT else "purple"
+
     def ball_number(center, radius, color_label, is_cue):
         if is_cue:
             return "cue"
-        white = fraction_on_table(white_mask, center, radius) if white_mask is not None else 0.0
+        white = (fraction_on_table(white_mask, center, expected_radius_px, 0.6 * expected_radius_px)
+                 if white_mask is not None else 0.0)
         if color_label == "cue_ball":
             # A stripe lying white side up: name it by whatever color shows.
             colors = {label: fraction_on_table(m, center, radius)
@@ -263,7 +323,7 @@ def _detect_balls(
             color_label = max(colors, key=colors.get, default=None)
             if color_label is None or colors[color_label] == 0:
                 return None
-            return BALL_NUMBERS_BY_COLOR[color_label][1]
+            return BALL_NUMBERS_BY_COLOR[resolve_blue_purple(center, radius, color_label)][1]
         numbers = BALL_NUMBERS_BY_COLOR.get(color_label)
         if numbers is None:
             return None
@@ -271,6 +331,7 @@ def _detect_balls(
 
     for (x, y, r, _), color_label in detected_circles.items():
         is_cue = ((x, y, r, color_label) == best_cue_key)
+        color_label = resolve_blue_purple((x, y), r, color_label)
         detection = Detection(
             center_px=(x, y),
             radius_px=r,

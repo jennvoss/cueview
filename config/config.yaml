@@ -14,14 +14,16 @@ calibration:
 detection:
   # [[H,S,V low], [H,S,V high]] per ball color (OpenCV hue 0-179), or a list of
   # such pairs. Solids and stripes share a color; stripes' white is matched by cue_ball.
-  # Tuned against tests/fixtures/table/ on the red cloth: red must be brighter than the
-  # cloth (V >= 112), and maroon is a narrow hue band that sits just off the cloth's.
+  # Tuned against tests/fixtures/table/ on the red cloth. Frames are first color-corrected
+  # so the cloth matches those images (see CLOTH_REFERENCE_BGR). Red must be brighter than
+  # the cloth (V >= 112); maroon overlaps the cloth, so maroon circles must also show the
+  # lamp's highlight (MAROON_MIN_HIGHLIGHT).
   hsv_ranges:
-    cue_ball: [[0, 0, 170], [40, 75, 255]]
+    cue_ball: [[0, 0, 170], [179, 75, 255]]   # any hue: near-white pixels' hue is unstable
     yellow:   [[18, 76, 150], [28, 255, 255]]
     orange:   [[8, 90, 150], [18, 255, 255]]
     red:      [[[0, 120, 112], [8, 255, 255]], [[170, 120, 112], [179, 255, 255]]]
-    maroon:   [[4, 100, 50], [10, 255, 110]]
+    maroon:   [[3, 90, 45], [12, 255, 125]]
     purple:   [[112, 45, 20], [140, 255, 160]]
     blue:     [[98, 110, 35], [118, 255, 200]]
     green:    [[38, 40, 40], [90, 255, 200]]

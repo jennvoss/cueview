@@ -13,9 +13,11 @@ BALL_NUMBERS_BY_COLOR = {
     "yellow": (1, 9), "blue": (2, 10), "red": (3, 11), "purple": (4, 12),
     "orange": (5, 13), "green": (6, 14), "maroon": (7, 15), "black": (8, 8),
 }
-# A colored ball is a stripe when at least this fraction of it is white; solids show
-# only their number circle (measured max 0.14), stripes 0.13 and up.
-STRIPE_MIN_WHITE = 0.15
+# A colored ball is a stripe when at least this fraction of an outer ring (0.6-1.0 ball
+# radii) is white: a stripe's white caps sit at the edge, while a solid's number circle
+# and the lamp's highlight sit toward the middle. Measured on the test images plus live
+# frames: solids at most 0.10, stripes mostly 0.12 and up (106/107 right).
+STRIPE_MIN_WHITE = 0.10
 # Scorekeeper: a ball counts as sunk once it hasn't been seen for SINK_AFTER_S, and
 # as back on the table once it has been seen continuously for RETURN_AFTER_S.
 SINK_AFTER_S = 3.0
@@ -36,3 +38,15 @@ MIN_BLACK_COVERAGE = 0.6
 # A colored (non-cue) circle must also be at least this full of its own color, or
 # it's a white ball seen through a loose range rather than that color.
 MIN_OWN_COLOR = 0.15
+# Lighting changes (brightness and color temperature) are undone per frame by scaling
+# each BGR channel so the cloth's median color matches the cloth in
+# tests/fixtures/table/, the lighting hsv_ranges were tuned under.
+CLOTH_REFERENCE_BGR = (29.0, 27.0, 86.0)
+CLOTH_GAIN_LIMITS = (0.5, 2.5)
+# Maroon is nearly the cloth's color, so a maroon circle must also show the overhead
+# lamp's highlight: brightest spot minus the surrounding cloth, in V levels. Measured:
+# real 7/15 balls 46-157, cloth that matched the maroon range at most 10.
+MAROON_MIN_HIGHLIGHT = 25
+# The blue and purple hsv_ranges overlap, so a ball found by either is named by the
+# median hue of its blue/purple pixels. Measured medians: blue 2/10 112-114, purple 4/12 117-120.
+BLUE_PURPLE_HUE_SPLIT = 116
