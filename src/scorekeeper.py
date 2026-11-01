@@ -5,15 +5,16 @@ player's arm, an occasional misread), so a ball only counts as sunk after it has
 seen for SINK_AFTER_S, and only counts as back on the table (e.g. after a re-rack) once it
 has been seen continuously for RETURN_AFTER_S. With update_detections, each spot on the
 table is named by majority vote over its recent readings, so a ball that is now and then
-misread as another number doesn't keep that other ball on the table.
+misread as another number doesn't keep that other ball on the table. A stripe too unclear
+to number (UNKNOWN_STRIPE) keeps the most recently seen missing stripe on the table.
 """
 import math
 from collections import Counter, deque
 from typing import Iterable, Optional, Union
 
 from src.constants import (
-    SINK_AFTER_S, RETURN_AFTER_S, NAME_VOTE_WINDOW_S, NAME_VOTE_RADIUS_PX,
-    WARMUP_S, WARMUP_MIN_SEEN_FRACTION,
+    SINK_AFTER_S, RETURN_AFTER_S, NAME_VOTE_WINDOW_S, NAME_VOTE_RADIUS_PX, MIN_SPOT_SIGHTINGS,
+    WARMUP_S, WARMUP_MIN_SEEN_FRACTION, UNKNOWN_STRIPE, PLAYER_HOLD_S,
 )
 
 SOLIDS = list(range(1, 8))
@@ -39,10 +40,26 @@ class ScoreKeeper:
         self.last_seen: dict = {}
         self.seen_since: dict = {}
         self.spots: list = []  # [{"pos": (x, y), "votes": deque[(timestamp, ball)]}]
+        # While a player is over the table the clock stops: nothing is counted, voted on or
+        # sunk. Time spent paused is subtracted, so balls hidden under an arm aren't "missing",
+        # and a ball pocketed during the shot is sunk SINK_AFTER_S after play resumes.
+        self.paused = False
+        self.paused_total = 0.0
+        self.hold_until = None
+        self.last_frame_at = None
 
-    def update_detections(self, detections: Iterable, timestamp: float) -> None:
+    def update_detections(self, detections: Iterable, timestamp: float, player_present: bool = False) -> None:
         """Feed a frame's detections (anything with .ball and .center_px). Each is matched to
         the nearest recent spot within NAME_VOTE_RADIUS_PX and named by that spot's majority."""
+        if player_present:
+            self.hold_until = timestamp + PLAYER_HOLD_S
+        if self.paused and self.last_frame_at is not None:
+            self.paused_total += timestamp - self.last_frame_at
+        self.last_frame_at = timestamp
+        self.paused = self.hold_until is not None and timestamp < self.hold_until
+        if self.paused:
+            return
+        timestamp -= self.paused_total
         named = []
         used = set()
         for det in detections:
@@ -63,7 +80,10 @@ class ScoreKeeper:
             while spot["votes"] and timestamp - spot["votes"][0][0] > NAME_VOTE_WINDOW_S:
                 spot["votes"].popleft()
         self.spots = [s for s in self.spots if s["votes"]]
-        self.update([self._majority(spot) for spot in named], timestamp)
+        # Only spots seen repeatedly count: a moving cue stick or hand makes a new,
+        # short-lived spot every frame and never gets there.
+        self.update([self._majority(spot) for spot in named if len(spot["votes"]) >= MIN_SPOT_SIGHTINGS],
+                    timestamp)
 
     @staticmethod
     def _majority(spot) -> Ball:
@@ -73,10 +93,18 @@ class ScoreKeeper:
         return next(ball for _, ball in reversed(spot["votes"]) if counts[ball] == top)
 
     def update(self, balls_seen: Iterable[Optional[Ball]], timestamp: float) -> None:
+        balls_seen = list(balls_seen)
         seen = {ball for ball in balls_seen if ball in self.on_table}
         if not self.ready:
             self._warm_up(seen, timestamp)
             return
+        # A stripe lying white side up with too little color to name is still a stripe on
+        # the table: each one keeps the most recently seen missing stripe from being sunk.
+        unknown = sum(1 for ball in balls_seen if ball == UNKNOWN_STRIPE)
+        missing = sorted((b for b in STRIPES if b not in seen and self.on_table[b]),
+                         key=lambda b: self.last_seen.get(b, timestamp), reverse=True)
+        for ball in missing[:unknown]:
+            self.last_seen[ball] = timestamp
         for ball in ALL_BALLS:
             if ball in seen:
                 self.last_seen[ball] = timestamp
@@ -106,11 +134,12 @@ class ScoreKeeper:
 
     def snapshot(self) -> dict:
         if not self.ready:
-            return {"game": "8-ball", "ready": False, "on_table": [], "solids_sunk": [],
+            return {"game": "8-ball", "ready": False, "paused": self.paused, "on_table": [], "solids_sunk": [],
                     "stripes_sunk": [], "eight_sunk": False, "cue_sunk": False}
         return {
             "game": "8-ball",
             "ready": True,
+            "paused": self.paused,
             "on_table": [ball for ball in ALL_BALLS if self.on_table[ball]],
             "solids_sunk": [ball for ball in SOLIDS if not self.on_table[ball]],
             "stripes_sunk": [ball for ball in STRIPES if not self.on_table[ball]],

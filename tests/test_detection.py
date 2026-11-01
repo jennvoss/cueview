@@ -222,3 +222,14 @@ class TestLightingChanges:
         assert highlight_above_surroundings(value, (50, 50), 12.0) < 10
         cv2.circle(value, (46, 46), 3, 220, -1)    # the lamp's reflection on a real ball
         assert highlight_above_surroundings(value, (50, 50), 12.0) > 100
+
+
+@pytest.mark.parametrize("name", sorted(p.stem for p in (Path(__file__).parent / "fixtures" / "table").glob("*.png")))
+def test_player_over_table(name):
+    """True only when someone leans over the table with the cue stick (13_cue_stick_*)."""
+    from src.config_loader import load_config
+    from src.detection import player_over_table
+    cfg = load_config("config/config.yaml")["detection"]
+    frame = cv2.imread(str(Path(__file__).parent / "fixtures" / "table" / f"{name}.png"))
+    detections = detect_balls(frame, cfg, 12.0)
+    assert player_over_table(frame, cfg["table_polygon"], detections, 12.0) == name.startswith("13_cue_stick")

@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from src.config_loader import load_config, override_config
 from src.capture import CameraCapture, StillImageSource, find_camera_index, CameraNotFoundError
 from src.calibration import load_calibration, undistort_frame, pixel_to_inches
-from src.detection import detect_balls, compute_expected_radius_px
+from src.detection import detect_balls, compute_expected_radius_px, player_over_table
 from src.tracking import BallTracker
 from src.metrics import MetricsEngine
 from src.output import SessionLogger, OverlayRenderer
@@ -441,7 +441,8 @@ def main():
             detections = detect_balls(undistorted, cfg["detection"], expected_radius_px)
             tracked = tracker.update(detections)
             cb = tracker.cue_ball()
-            scorekeeper.update_detections(detections, time.perf_counter())
+            player = player_over_table(undistorted, cfg["detection"].get("table_polygon"), detections, expected_radius_px)
+            scorekeeper.update_detections(detections, time.perf_counter(), player_present=player)
             drill.update(detections, time.perf_counter(), cfg["detection"].get("table_polygon"))
 
             if cb:

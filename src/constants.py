@@ -30,7 +30,7 @@ NAME_VOTE_WINDOW_S = 2.0
 # shows "reading the table" meanwhile); a ball seen in at least WARMUP_MIN_SEEN_FRACTION of
 # those frames starts on the table, the rest start sunk.
 WARMUP_S = 1.5
-WARMUP_MIN_SEEN_FRACTION = 0.3
+WARMUP_MIN_SEEN_FRACTION = 0.2
 # Drills (src/drills.py). A ball counts as on its mark within DRILL_PLACE_TOLERANCE_IN and
 # must sit there DRILL_SETTLE_S before the drill is ready. The shot starts when the cue ball
 # moves DRILL_MOVE_THRESHOLD_IN off its mark and ends once nothing has moved for DRILL_REST_S
@@ -53,6 +53,9 @@ DRILL_MAX_TRACK_GAP_S = 0.25
 # assigned to the pocket it was heading toward instead of the nearest one.
 DRILL_POCKET_NEAR_IN = 10.0
 NAME_VOTE_RADIUS_PX = 12.0
+# A spot only counts once it has been seen at least this many times within the vote window,
+# so things that never sit still (a moving cue stick or hand, read as balls) don't count.
+MIN_SPOT_SIGHTINGS = 3
 # A ball is on the table only if more than this fraction of its disc lies inside
 # detection.table_polygon; otherwise it is in a pocket and ignored.
 ON_TABLE_MIN_FRACTION = 0.5
@@ -82,6 +85,25 @@ MAROON_MIN_HIGHLIGHT = 25
 # The blue and purple hsv_ranges overlap, so a ball found by either is named by the
 # median hue of its blue/purple pixels. Measured medians: blue 2/10 112-114, purple 4/12 117-120.
 BLUE_PURPLE_HUE_SPLIT = 116
+# A stripe lying white side up is only named when its band is clear: at least
+# WHITE_UP_MIN_BAND_PX band pixels within 0.7 ball radii, one color family making up
+# WHITE_UP_MIN_SHARE of them. Otherwise (a thin, very dark band in dim light: live 10/12
+# showed 0-30 pixels that flipped between blue/purple and red frame to frame, against
+# ~44 for a white-side-up 15) it is reported as an unknown stripe.
+WHITE_UP_MIN_BAND_PX = 20
+WHITE_UP_MIN_SHARE = 0.6
+UNKNOWN_STRIPE = "stripe"
+# A ball at least this white (whole disc) is a stripe lying white side up, whichever color
+# range found it, and is named by its band. Band-up stripes measured at most ~0.53.
+WHITE_UP_MIN_WHITE = 0.55
+# A player is over the table when a non-ball shape (arm, cue stick, body) covering at least
+# PLAYER_MIN_AREA_PX stands out from the cloth (off_cloth_image >= PLAYER_OFF_CLOTH_LEVEL).
+# Measured: no player at most 427 px, a player or cue stick at least 1606 px.
+PLAYER_MIN_AREA_PX = 1000
+PLAYER_OFF_CLOTH_LEVEL = 60
+# The scorekeeper's clock stops while a player is over the table and for PLAYER_HOLD_S after
+# they step back: their arm and cue stick read as balls, and the balls under them can't be seen.
+PLAYER_HOLD_S = 0.5
 # Extra circle search on how far each pixel is from the local cloth color, for balls
 # nearly the cloth's color (the maroon 7/15). It needs a stricter Hough threshold than the
 # color masks: at 25 it finds ~46 candidates per frame and every live 7; at 10 it finds ~960.

@@ -10,6 +10,8 @@ from src.constants import (
     BALL_NUMBERS_BY_COLOR, STRIPE_MIN_WHITE,
     CLOTH_REFERENCE_BGR, CLOTH_GAIN_LIMITS, MAROON_MIN_HIGHLIGHT, BLUE_PURPLE_HUE_SPLIT,
     OFF_CLOTH_GAIN, OFF_CLOTH_HOUGH_PARAM2,
+    WHITE_UP_MIN_BAND_PX, WHITE_UP_MIN_SHARE, UNKNOWN_STRIPE, WHITE_UP_MIN_WHITE,
+    PLAYER_MIN_AREA_PX, PLAYER_OFF_CLOTH_LEVEL,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,7 +23,7 @@ class Detection:
     radius_px: float
     is_cue_ball: bool
     color_label: str
-    ball: Optional[Union[int, str]] = None  # "cue", 1-15, or None if unknown
+    ball: Optional[Union[int, str]] = None  # "cue", 1-15, UNKNOWN_STRIPE, or None if unknown
 
 
 def table_mask(shape: tuple, table_polygon) -> np.ndarray:
@@ -116,6 +118,21 @@ def off_cloth_image(frame: np.ndarray) -> np.ndarray:
     diff = cv2.absdiff(frame, background)
     total = cv2.transform(diff, np.full((1, 3), OFF_CLOTH_GAIN, dtype=np.float32))
     return cv2.GaussianBlur(total, (5, 5), 0)
+
+
+def player_over_table(frame: np.ndarray, table_polygon, detections, expected_radius_px: float) -> bool:
+    """True when something large that isn't a ball (an arm, a cue stick, a body) is over the
+    cloth. Balls are blanked out first, so only shapes too big to be balls remain."""
+    if not table_polygon:
+        return False
+    inner = cv2.erode(table_mask(frame.shape, table_polygon), None, iterations=6)
+    off_cloth = off_cloth_image(correct_to_cloth(frame, table_polygon))
+    shape = ((off_cloth >= PLAYER_OFF_CLOTH_LEVEL) & (inner > 0)).astype(np.uint8)
+    shape = cv2.morphologyEx(shape, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    for d in detections:
+        cv2.circle(shape, (int(d.center_px[0]), int(d.center_px[1])), int(expected_radius_px * 1.6), 0, -1)
+    count, _, stats, _ = cv2.connectedComponentsWithStats(shape, 8)
+    return count > 1 and int(stats[1:, cv2.CC_STAT_AREA].max()) >= PLAYER_MIN_AREA_PX
 
 
 def compute_expected_radius_px(calibration: dict) -> float:
@@ -332,19 +349,51 @@ def _detect_balls(
             return color_label
         return "blue" if np.median(hues) < BLUE_PURPLE_HUE_SPLIT else "purple"
 
+    def white_up_color(center):
+        """Color of a stripe lying white side up, from the hue of its band pixels: the
+        non-white, saturated pixels well inside the ball, so the red cloth at its edge
+        doesn't pass for a red or maroon band."""
+        r = 0.7 * expected_radius_px  # well inside the ball, clear of the cloth at its edge
+        half, template, _ = _disc_template(int(round(r * 4)), 0)
+        cx, cy = int(round(center[0])), int(round(center[1]))
+        h, w = hsv.shape[:2]
+        x0, x1 = max(cx - half, 0), min(cx + half + 1, w)
+        y0, y1 = max(cy - half, 0), min(cy + half + 1, h)
+        window = template[y0 - (cy - half):y1 - (cy - half), x0 - (cx - half):x1 - (cx - half)]
+        region = hsv[y0:y1, x0:x1][window].astype(int)
+        hue, sat, val = region[:, 0], region[:, 1], region[:, 2]
+        band = (sat >= 50) & (val >= 15) & ~((sat <= 75) & (val >= 140))
+        hue, val = hue[band], val[band]
+        if hue.size < WHITE_UP_MIN_BAND_PX:
+            return None
+        bright = val >= 140
+        families = {
+            "blue_purple": (hue >= 95) & (hue < 150),
+            "green": (hue >= 35) & (hue < 95),
+            "yellow": (hue >= 18) & (hue < 35) & bright,
+            "orange": (hue >= 8) & (hue < 18) & bright,
+            "red": ((hue >= 165) | (hue < 8)) & (val >= 112),
+            "maroon": ((hue >= 165) | (hue < 18)) & (val < 112),
+        }
+        best = max(families, key=lambda k: families[k].sum())
+        if families[best].mean() < WHITE_UP_MIN_SHARE:
+            return None
+        if best == "blue_purple":
+            return "blue" if np.median(hue[families[best]]) < BLUE_PURPLE_HUE_SPLIT else "purple"
+        return best
+
     def ball_number(center, radius, color_label, is_cue):
         if is_cue:
             return "cue"
         white = (fraction_on_table(white_mask, center, expected_radius_px, 0.6 * expected_radius_px)
                  if white_mask is not None else 0.0)
-        if color_label == "cue_ball":
-            # A stripe lying white side up: name it by whatever color shows.
-            colors = {label: fraction_on_table(m, center, radius)
-                      for label, m in masks_by_label.items() if label in BALL_NUMBERS_BY_COLOR and label != "black"}
-            color_label = max(colors, key=colors.get, default=None)
-            if color_label is None or colors[color_label] == 0:
-                return None
-            return BALL_NUMBERS_BY_COLOR[resolve_blue_purple(center, radius, color_label)][1]
+        mostly_white = (white_mask is not None
+                        and fraction_on_table(white_mask, center, expected_radius_px) >= WHITE_UP_MIN_WHITE)
+        if color_label == "cue_ball" or (mostly_white and color_label != "black"):
+            # A stripe lying white side up: name it by the color of the band that shows,
+            # however dark (in dim light a blue 10 or purple 12 band reads almost black).
+            color_label = white_up_color(center)
+            return BALL_NUMBERS_BY_COLOR[color_label][1] if color_label else UNKNOWN_STRIPE
         numbers = BALL_NUMBERS_BY_COLOR.get(color_label)
         if numbers is None:
             return None

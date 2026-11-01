@@ -138,3 +138,59 @@ def test_ball_rolling_to_new_spot_keeps_its_name():
     feed_detections(keeper, frames, 0.0)
     assert 5 in keeper.snapshot()["on_table"]
     assert len(keeper.spots) == 2
+
+
+def test_moving_phantoms_do_not_keep_a_sunk_ball():
+    """A cue stick sweeping across the table, read as the (sunk) 15 at a new spot each frame."""
+    keeper = ScoreKeeper(sink_after_s=3.0)
+    frames = []
+    for i in range(int(6 * FPS)):
+        frames.append([Det("cue", 328, 130), Det(8, 928, 130), Det(15, 200 + 15 * i, 300 + 2 * i)])
+    feed_detections(keeper, frames, 0.0)
+    snap = keeper.snapshot()
+    assert 15 in snap["stripes_sunk"]
+    assert 8 in snap["on_table"]
+
+
+def test_unknown_stripes_keep_recently_seen_stripes():
+    """10 and 12 roll to rest white side up (unnameable) while the 15, long gone, stays sunk."""
+    keeper = ScoreKeeper(sink_after_s=3.0, warmup_s=0.5)
+    t = feed(keeper, {"cue", 8, 10, 12, 15}, 1.0, 0.0)
+    t = feed(keeper, {"cue", 8, 10, 12}, 4.0, t)          # 15 pocketed
+    assert 15 in keeper.snapshot()["stripes_sunk"]
+    t = 0.0
+    for _ in range(int(6 * FPS)):                          # 10 and 12 now unnameable
+        keeper.update(["cue", 8, "stripe", "stripe"], 5.0 + t)
+        t += 1 / FPS
+    snap = keeper.snapshot()
+    assert 10 in snap["on_table"] and 12 in snap["on_table"]
+    assert 15 in snap["stripes_sunk"]
+
+
+def test_unknown_stripe_does_not_revive_a_sunk_stripe():
+    keeper = ScoreKeeper(sink_after_s=3.0, warmup_s=0.5)
+    t = feed(keeper, {"cue", 8, 15}, 1.0, 0.0)
+    t = feed(keeper, {"cue", 8}, 4.0, t)
+    t = feed(keeper, ["cue", 8, "stripe"], 3.0, t)
+    assert 15 in keeper.snapshot()["stripes_sunk"]
+
+
+def test_player_over_table_pauses_scoring():
+    """While the player leans over: stick phantoms named 15 don't count, the 3 hidden under
+    their arm isn't sunk, and the 15 they pocketed is sunk once play resumes."""
+    keeper = ScoreKeeper(sink_after_s=3.0, warmup_s=0.5)
+    table = [Det("cue", 100, 100), Det(3, 300, 300), Det(8, 500, 300), Det(15, 700, 300)]
+    t = feed_detections(keeper, [table] * int(2 * FPS), 0.0)
+    for i in range(int(5 * FPS)):                     # leaning over for 5 s: 3 hidden, stick read as 15s
+        keeper.update_detections([Det("cue", 100, 100), Det(8, 500, 300), Det(15, 600 + 3 * i, 500)], t,
+                                 player_present=True)
+        t += 1 / FPS
+    assert keeper.snapshot()["paused"] is True
+    assert 3 in keeper.snapshot()["on_table"]
+    after = [Det("cue", 100, 100), Det(3, 300, 300), Det(8, 500, 300)]   # 15 went in
+    t = feed_detections(keeper, [after] * int(1.0 * FPS), t)
+    snap = keeper.snapshot()
+    assert snap["paused"] is False and 3 in snap["on_table"] and 15 in snap["on_table"]  # not 3 s yet
+    feed_detections(keeper, [after] * int(3.0 * FPS), t)
+    snap = keeper.snapshot()
+    assert 15 in snap["stripes_sunk"] and 3 in snap["on_table"]
