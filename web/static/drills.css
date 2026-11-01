@@ -54,3 +54,39 @@
 .stats { display: flex; gap: 20px; color: var(--muted); }
 .stats span { color: var(--text); font-weight: 700; font-size: 16px; }
 .stats em { font-style: normal; }
+
+.drill-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 14px 24px 0;
+}
+.drill-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 8px;
+  border: 1px solid var(--panel-border); background: var(--panel);
+  color: var(--accent); text-decoration: none; font-size: 13px;
+}
+.drill-tab:hover { border-color: #2b3a4a; }
+.drill-tab[aria-current="page"] { color: var(--text); border-color: var(--accent); font-weight: 600; }
+.drill-num {
+  display: inline-grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #1f2933; color: var(--text); font-size: 11px; font-weight: 700;
+}
+.drill-tab[aria-current="page"] .drill-num { background: var(--accent); color: #0e1419; }
+
+.drill-step-nav {
+  display: flex; align-items: center; gap: 12px; margin-top: 14px;
+  padding-top: 12px; border-top: 1px solid var(--panel-border); font-size: 13px;
+}
+.drill-step { color: var(--accent); text-decoration: none; }
+.drill-step:hover { text-decoration: underline; }
+.drill-step.next { margin-left: auto; }
+.drill-count { color: var(--muted); }
+.drill-step.prev + .drill-count { margin-right: auto; }
+
+@media (max-width: 860px) {
+  .drill-tabs { padding: 12px 16px 0; }
+}
+
+.drill-overlay .cue-path { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 6; stroke-linecap: round; }
+.drill-overlay .ghost { fill: rgba(255, 255, 255, 0.12); stroke: #fff; stroke-width: 2; stroke-dasharray: 4 4; }

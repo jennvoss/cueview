@@ -1,6 +1,6 @@
 {# Top nav shared by every page; the current page is highlighted. #}
 <nav class="nav-links" aria-label="Pages">
   {% for endpoint, label in [("index", "Scoreboard"), ("drills", "Drills"), ("debug", "Debug")] %}
-  <a class="nav-link" href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} aria-current="page"{% endif %}>{{ label }}</a>
+  <a class="nav-link" href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint or (endpoint == "drills" and request.endpoint == "drill_page") %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
 </nav>

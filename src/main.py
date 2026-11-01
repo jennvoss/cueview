@@ -20,7 +20,7 @@ from src.tracking import BallTracker
 from src.metrics import MetricsEngine
 from src.output import SessionLogger, OverlayRenderer
 from src.scorekeeper import ScoreKeeper
-from src.drills import DrillTracker
+from src.drills import DrillTracker, DRILLS, read_selection
 
 
 def identity_calibration() -> dict:
@@ -455,6 +455,11 @@ def main():
 
             status_writer.tick()
             if status_writer.should_write(frame_index):
+                # Switch drills when one is chosen on the Drills page.
+                chosen = read_selection(web_data_dir)
+                if chosen and chosen != drill.drill.id:
+                    drill = DrillTracker(DRILLS[chosen])
+                    logger.info(f"Drill: {drill.drill.name}")
                 # The dashboard shows the plain frame; detection markers stay in the
                 # capture window only.
                 status_writer.write(

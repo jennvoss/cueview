@@ -96,7 +96,7 @@ def test_status_from_still_image_is_not_live(client, outputs):
 
 
 def test_drills_page(client):
-    res = client.get("/drills")
+    res = client.get("/drills", follow_redirects=True)
     assert res.status_code == 200
     html = res.get_data(as_text=True)
     assert "<title>CueView — Drills</title>" in html
@@ -122,8 +122,33 @@ def test_unknown_drill_404(client):
 @pytest.mark.parametrize("path", ["/", "/drills", "/debug"])
 def test_every_page_has_the_same_nav(client, path):
     import re
-    html = client.get(path).get_data(as_text=True)
+    html = client.get(path, follow_redirects=True).get_data(as_text=True)  # /drills -> /drills/<id>
     nav = re.search(r'<nav class="nav-links".*?</nav>', html, re.S).group(0)
     links = re.findall(r'<a class="nav-link" href="([^"]+)"( aria-current="page")?>([^<]+)</a>', nav)
     assert [(href, label) for href, _, label in links] == [("/", "Scoreboard"), ("/drills", "Drills"), ("/debug", "Debug")]
     assert [href for href, current, _ in links if current] == [path]
+
+
+def test_each_drill_has_a_page_with_navigation(client):
+    from src.drills import DRILL_ORDER
+    for i, drill in enumerate(DRILL_ORDER):
+        html = client.get(f"/drills/{drill.id}").get_data(as_text=True)
+        assert f'data-drill-id="{drill.id}"' in html
+        for other in DRILL_ORDER:  # tabs to every drill
+            assert f'href="/drills/{other.id}"' in html
+        assert f"Drill {i + 1} of {len(DRILL_ORDER)}" in html
+        assert ('class="drill-step prev"' in html) == (i > 0)
+        assert ('class="drill-step next"' in html) == (i < len(DRILL_ORDER) - 1)
+        data = client.get(f"/api/drills/{drill.id}").get_data(as_text=True)
+        assert drill.name in data
+
+
+def test_selecting_a_drill_tells_capture(client, tmp_path, monkeypatch):
+    import web.app as webapp
+    from src.drills import read_selection
+    monkeypatch.setattr(webapp, "OUTPUTS_DIR", tmp_path)
+    assert client.post("/api/drills/cut-shot/select").status_code == 200
+    assert read_selection(tmp_path) == "cut-shot"
+    # /drills opens the drill capture is running
+    assert client.get("/drills").headers["Location"].endswith("/drills/cut-shot")
+    assert client.post("/api/drills/nope/select").status_code == 404

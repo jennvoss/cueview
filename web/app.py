@@ -3,10 +3,10 @@ import time
 from pathlib import Path
 
 import numpy as np
-from flask import Flask, jsonify, render_template, send_file
+from flask import Flask, jsonify, redirect, render_template, send_file, url_for
 
 from src.config_loader import load_config
-from src.drills import DRILLS, DrillTracker
+from src.drills import DRILLS, DRILL_ORDER, DrillTracker, read_selection, write_selection
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config" / "config.yaml"
@@ -33,7 +33,27 @@ def debug():
 
 @app.route("/drills")
 def drills():
-    return render_template("drills.html")
+    """Open the drill last chosen (capture is running it), or the first one."""
+    return redirect(url_for("drill_page", drill_id=read_selection(OUTPUTS_DIR) or DRILL_ORDER[0].id))
+
+
+@app.route("/drills/<drill_id>")
+def drill_page(drill_id):
+    if drill_id not in DRILLS:
+        return redirect(url_for("drills"))
+    order = [{"id": d.id, "name": d.name} for d in DRILL_ORDER]
+    index = next(i for i, d in enumerate(DRILL_ORDER) if d.id == drill_id)
+    return render_template("drills.html", drills=order, drill_id=drill_id, index=index)
+
+
+@app.route("/api/drills/<drill_id>/select", methods=["POST"])
+def api_select_drill(drill_id):
+    """Make this the drill capture tracks (capture picks it up within a few frames)."""
+    if drill_id not in DRILLS:
+        return jsonify({"error": f"unknown drill {drill_id}"}), 404
+    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    write_selection(OUTPUTS_DIR, drill_id)
+    return jsonify({"drill": drill_id})
 
 
 @app.route("/api/drills/<drill_id>")

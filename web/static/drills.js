@@ -1,6 +1,6 @@
 const STATUS_POLL_MS = 500;
 const FEED_POLL_MS = 300;
-const DRILL_ID = "stop-shot";
+const DRILL_ID = document.body.dataset.drillId;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const $ = (id) => document.getElementById(id);
@@ -52,14 +52,31 @@ function renderOverlay(d, live) {
   const placed = (live && live.placed) || {};
   const result = live && live.state === "result" ? live.result : null;
 
+  const aim = m.aim || m.object_start;
+  const targetR = Math.max(m.target_radius_px || 0, r * 2.2);
   overlay.append(
-    svg("line", { class: "aim", x1: m.cue_start[0], y1: m.cue_start[1], x2: m.pocket[0], y2: m.pocket[1] }),
+    // Cue ball to the ghost ball, then the object ball to the pocket.
+    svg("line", { class: "aim", x1: m.cue_start[0], y1: m.cue_start[1], x2: aim[0], y2: aim[1] }),
+    svg("line", { class: "aim", x1: m.object_start[0], y1: m.object_start[1], x2: m.pocket[0], y2: m.pocket[1] }),
+  );
+  if (d.kind !== "stop") {
+    // Where the cue ball should go after contact.
+    overlay.append(svg("line", { class: "cue-path", x1: aim[0], y1: aim[1], x2: m.cue_target[0], y2: m.cue_target[1] }));
+  }
+  if (d.kind === "cut") {
+    overlay.append(
+      svg("circle", { class: "ghost", cx: aim[0], cy: aim[1], r }),
+      svg("text", { class: "label", x: aim[0] - r * 1.6, y: aim[1] + r * 2.4, "text-anchor": "end" }, "Ghost ball: aim here"),
+    );
+  }
+  overlay.append(
     svg("circle", { class: `mark object${placed.object ? " placed" : ""}`, cx: m.object_start[0], cy: m.object_start[1], r: r + 3 }),
     svg("circle", { class: `mark cue${placed.cue ? " placed" : ""}`, cx: m.cue_start[0], cy: m.cue_start[1], r: r + 3 }),
-    svg("circle", { class: "target", cx: m.cue_target[0], cy: m.cue_target[1], r: r * 2.2 }),
+    svg("circle", { class: "target", cx: m.cue_target[0], cy: m.cue_target[1], r: targetR }),
     svg("text", { class: "label", x: m.object_start[0] + r * 2.6, y: m.object_start[1] + 6 }, "Object ball"),
     svg("text", { class: "label", x: m.cue_start[0] + r * 2.6, y: m.cue_start[1] + 6 }, "Cue ball"),
-    svg("text", { class: "label", x: m.cue_target[0] - r * 2.4, y: m.cue_target[1] - r * 2.6, "text-anchor": "end" }, "Cue ball stops here"),
+    svg("text", { class: "label", x: m.cue_target[0] - targetR - 6, y: m.cue_target[1] - targetR, "text-anchor": "end" },
+        d.kind === "stop" ? "Cue ball stops here" : "Cue ball target"),
   );
   if (result) {
     if (result.cue_end) overlay.append(svg("circle", { class: "end cue", cx: result.cue_end[0], cy: result.cue_end[1], r: r * 0.55 }));
@@ -112,6 +129,8 @@ function setStatus(state) {
 }
 
 async function loadDrill() {
+  // Tell capture to track this drill (it switches within a few frames).
+  fetch(`/api/drills/${DRILL_ID}/select`, { method: "POST" }).catch(() => {});
   try {
     const res = await fetch(`/api/drills/${DRILL_ID}`);
     if (res.ok) {
@@ -129,10 +148,12 @@ async function pollStatus() {
     if (res.ok) s = await res.json();
   } catch (e) { /* server not reachable */ }
   const live = s && s.live && s.drill && s.drill.id === DRILL_ID ? s.drill : null;
+  const switching = Boolean(s && s.live && s.drill && s.drill.id !== DRILL_ID);
   setStatus(s && s.status === "running" ? "running" : "idle");
   $("feed-badge").hidden = Boolean(s && s.live) || !feedLoaded;
   $("feed-badge").textContent = "Not live";
   renderLive(live);
+  if (switching) $("state-line").textContent = "Switching capture to this drill…";
   // Marks from capture follow any live tuning of the table outline.
   if (drill) renderOverlay(live && live.marks ? { ...drill, marks: live.marks } : drill, live);
 }

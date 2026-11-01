@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='scoreboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='drills.css') }}">
 </head>
-<body>
+<body data-drill-id="{{ drill_id }}">
   <header>
     <h1>CueView <span class="game">Drills</span></h1>
     {% include "_nav.html" %}
@@ -16,6 +16,14 @@
       <span id="status-label">IDLE</span>
     </div>
   </header>
+
+  <nav class="drill-tabs" aria-label="Drills">
+    {% for d in drills %}
+    <a class="drill-tab" href="{{ url_for('drill_page', drill_id=d.id) }}"{% if d.id == drill_id %} aria-current="page"{% endif %}>
+      <span class="drill-num">{{ loop.index }}</span>{{ d.name }}
+    </a>
+    {% endfor %}
+  </nav>
 
   <main class="layout">
     <div class="live">
@@ -42,6 +50,15 @@
         <h2 id="drill-name">Drill</h2>
         <p class="drill-summary" id="drill-summary"></p>
         <ol class="steps" id="steps"></ol>
+        <div class="drill-step-nav">
+          {% if index > 0 %}
+          <a class="drill-step prev" href="{{ url_for('drill_page', drill_id=drills[index - 1].id) }}">← {{ drills[index - 1].name }}</a>
+          {% endif %}
+          <span class="drill-count">Drill {{ index + 1 }} of {{ drills | length }}</span>
+          {% if index + 1 < drills | length %}
+          <a class="drill-step next" href="{{ url_for('drill_page', drill_id=drills[index + 1].id) }}">{{ drills[index + 1].name }} →</a>
+          {% endif %}
+        </div>
       </article>
 
       <article class="group">

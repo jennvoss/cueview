@@ -110,8 +110,11 @@ Then open:
   table after 1 s in view (`SINK_AFTER_S` / `RETURN_AFTER_S` in `src/constants.py`).
 - <http://localhost:5000/drills> — **Drills**: practice shots with targets drawn on the
   live view, instructions for where to hit the cue ball and how hard, and an analysis
-  after each shot. The first drill is a stop shot into the top side pocket. Set the balls
-  on their marks, wait for "Ready", and shoot; set them up again for the next try.
+  after each shot. Four drills, each a step harder: **stop shot**, **draw shot**,
+  **follow shot** (angled, into a corner pocket) and **cut shot** (aim at the ghost ball).
+  Switch between them with the tabs or the previous/next links; the page tells capture
+  which drill to track (via `outputs/drill.json`). Set the balls on their marks, wait for
+  "Ready", and shoot; set them up again for the next try.
 - <http://localhost:5000/debug> — **Debug dashboard**, described below.
 
 The debug dashboard works whether or not capture is currently running:

@@ -113,7 +113,7 @@ def test_missed_right_of_pocket():
     sim.frames(2.5, cue=OBJECT_MARK, obj=miss)
     result = sim.tracker.snapshot()["result"]
     assert result["rating"] == "missed" and not result["pocketed"]
-    assert any("missed right" in n and "aim left" in n for n in result["notes"])
+    assert any("missed right" in n and "left side" in n and "Aim a touch to the right" in n for n in result["notes"])
 
 
 def test_too_soft():
@@ -205,3 +205,143 @@ def test_object_ball_lost_mid_roll_uses_its_heading():
     sim.frames(2.5, cue=OBJECT_MARK)
     result = sim.tracker.snapshot()["result"]
     assert result["pocketed"] is True and result["pocket"] == "top side"
+
+
+# -- other drills: the same simulator, driven by each drill's own marks -------------------
+
+from src.drills import DRAW_SHOT  # noqa: E402
+
+
+class DrillSim(Sim):
+    def __init__(self, drill):
+        self.tracker = DrillTracker(drill)
+        self.t = 0.0
+        self.cue_mark, self.object_mark = GEO.point(drill.cue_start), GEO.point(drill.object_start)
+        self.pocket, self.target = GEO.point(drill.pocket), GEO.point(drill.cue_target)
+
+
+def play(drill, cue_end, object_end=None, pocketed=True):
+    """Set up, shoot: object ball to the pocket (or object_end), cue ball to cue_end (None = scratch)."""
+    sim = DrillSim(drill)
+    sim.frames(1.5, cue=sim.cue_mark, obj=sim.object_mark)
+    assert sim.tracker.state == "ready"
+    contact = sim.object_mark
+    sim.roll(0.4, cue_path=(sim.cue_mark, contact), obj_path=(sim.object_mark, sim.object_mark))
+    obj_to = sim.pocket if pocketed else object_end
+    sim.roll(0.5, cue_path=(contact, cue_end if cue_end else sim.pocket), obj_path=(sim.object_mark, obj_to))
+    sim.frames(2.5, cue=cue_end, obj=None if pocketed else object_end)
+    return sim.tracker.snapshot()["result"]
+
+
+def toward_shooter(point, inches):
+    """Move down the table (toward the bottom rail, where the shooter stands)."""
+    return (point[0], point[1] + inches * IN)
+
+
+def test_draw_shot_perfect():
+    result = play(DRAW_SHOT, GEO.point(DRAW_SHOT.cue_target))
+    assert result["rating"] == "perfect" and result["pocketed"]
+    assert "Lovely draw" in result["notes"][0]
+
+
+def test_draw_shot_not_enough_draw():
+    result = play(DRAW_SHOT, toward_shooter(GEO.point(DRAW_SHOT.object_start), 3))  # came back only 3 in
+    assert result["rating"] == "pocketed"
+    assert any("not enough draw" in n and "Hit lower" in n for n in result["notes"])
+
+
+def test_draw_shot_too_much_draw():
+    result = play(DRAW_SHOT, toward_shooter(GEO.point(DRAW_SHOT.cue_target), 8))
+    assert any("drew back 8 in too far" in n for n in result["notes"])
+
+
+from src.drills import FOLLOW_SHOT  # noqa: E402
+
+
+def along_line(drill, point, inches):
+    """Move along the drill's shot line (cue mark -> pocket); negative = back toward the shooter."""
+    a, b = GEO.point(drill.cue_start), GEO.point(drill.pocket)
+    n = math.dist(a, b)
+    return (point[0] + (b[0] - a[0]) / n * inches * IN, point[1] + (b[1] - a[1]) / n * inches * IN)
+
+
+def test_follow_shot_marks_are_in_line():
+    cue, obj, pocket = (GEO.point(p) for p in (FOLLOW_SHOT.cue_start, FOLLOW_SHOT.object_start, FOLLOW_SHOT.pocket))
+    cross = (obj[0] - cue[0]) * (pocket[1] - cue[1]) - (obj[1] - cue[1]) * (pocket[0] - cue[0])
+    assert abs(cross) / math.dist(cue, pocket) < 3  # within 3 px of the line
+
+
+def test_follow_shot_perfect():
+    result = play(FOLLOW_SHOT, GEO.point(FOLLOW_SHOT.cue_target))
+    assert result["rating"] == "perfect" and result["pocket"] == "top-right corner"
+
+
+def test_follow_shot_not_enough_follow():
+    result = play(FOLLOW_SHOT, along_line(FOLLOW_SHOT, GEO.point(FOLLOW_SHOT.object_start), 1))
+    assert any("not enough follow" in n and "higher" in n for n in result["notes"])
+
+
+def test_follow_shot_too_much_follow():
+    result = play(FOLLOW_SHOT, along_line(FOLLOW_SHOT, GEO.point(FOLLOW_SHOT.cue_target), 5))
+    assert any("followed 5 in too far" in n for n in result["notes"])
+
+
+def test_follow_shot_scratch():
+    result = play(FOLLOW_SHOT, None)
+    assert result["rating"] == "scratch"
+    assert any("followed it all the way in" in n or "It followed all the way in" in n for n in result["notes"])
+
+
+from src.drills import CUT_SHOT, DRILL_ORDER, aim_point  # noqa: E402
+
+
+def test_cut_shot_ghost_ball_is_behind_object_ball():
+    ghost, obj, pocket = aim_point(CUT_SHOT, GEO), GEO.point(CUT_SHOT.object_start), GEO.point(CUT_SHOT.pocket)
+    assert math.dist(ghost, obj) == pytest.approx(2.25 * IN, rel=0.01)       # one ball width
+    assert math.dist(ghost, pocket) > math.dist(obj, pocket)                  # on the far side
+
+
+def test_cut_shot_perfect():
+    result = play(CUT_SHOT, GEO.point(CUT_SHOT.cue_target))
+    assert result["rating"] == "perfect" and result["pocket"] == "top side"
+
+
+def test_cut_shot_cue_ball_short_and_long():
+    target, ghost = GEO.point(CUT_SHOT.cue_target), aim_point(CUT_SHOT, GEO)
+    n = math.dist(ghost, target)
+    toward = lambda d: (target[0] + (target[0] - ghost[0]) / n * d * IN, target[1] + (target[1] - ghost[1]) / n * d * IN)
+    short = play(CUT_SHOT, toward(-10))
+    assert any("short of its target: hit a little firmer" in n for n in short["notes"])
+    long = play(CUT_SHOT, toward(10))
+    assert any("past its target: hit a little softer" in n for n in long["notes"])
+
+
+def test_cut_shot_missed_pocket_mentions_ghost_ball():
+    obj = GEO.point(CUT_SHOT.object_start)
+    result = play(CUT_SHOT, GEO.point(CUT_SHOT.cue_target), object_end=(obj[0] - 6 * IN, obj[1] - 9 * IN), pocketed=False)
+    assert result["rating"] == "missed"
+    assert any("missed left" in n and "ghost-ball" in n for n in result["notes"])
+
+
+@pytest.mark.parametrize("drill", DRILL_ORDER, ids=lambda d: d.id)
+def test_every_drill_marks_on_table_and_distinct(drill):
+    snap = DrillTracker(drill)
+    snap.update([], 0.0, POLYGON)
+    marks = snap.snapshot()["marks"]
+    for key in ("cue_start", "object_start", "pocket", "cue_target", "aim"):
+        x, y = marks[key]
+        assert 150 < x < 1180 and 60 < y < 590
+    assert math.dist(marks["cue_start"], marks["object_start"]) > 4 * IN  # balls not on top of each other
+
+
+def test_follow_shot_object_ball_hidden_behind_cue_ball():
+    """The cue ball follows right behind the object ball, so it's never seen moving on its own:
+    credit the drill's pocket rather than guessing the nearest one."""
+    sim = DrillSim(FOLLOW_SHOT)
+    sim.frames(1.5, cue=sim.cue_mark, obj=sim.object_mark)
+    sim.roll(0.4, cue_path=(sim.cue_mark, sim.object_mark), obj_path=(sim.object_mark, sim.object_mark))
+    end = along_line(FOLLOW_SHOT, sim.target, 2)
+    sim.roll(0.5, cue_path=(sim.object_mark, end), obj_path=(sim.object_mark, sim.object_mark))  # hidden by the cue ball
+    sim.frames(2.5, cue=end)
+    result = sim.tracker.snapshot()["result"]
+    assert result["pocketed"] and result["pocket"] == "top-right corner"

@@ -129,3 +129,22 @@ def test_live_run_shows_unmarked_frame_on_dashboard(tmp_path, monkeypatch):
     shown = cv2.imread(str(tmp_path / "latest.jpg")).astype(int)
     overlay_green = (shown[..., 1] > 200) & (shown[..., 0] < 60) & (shown[..., 2] < 60)
     assert overlay_green.sum() == 0
+
+
+def test_capture_switches_to_the_drill_chosen_on_the_page(tmp_path, monkeypatch):
+    import json
+    import sys
+    from pathlib import Path
+    from src.drills import write_selection
+
+    src = Path(__file__).parent / "fixtures" / "table" / "12_midgame.png"
+    write_selection(tmp_path, "follow-shot")
+    keys = iter([-1] * 11 + [ord("q")])
+    monkeypatch.setattr(main.cv2, "imshow", lambda *a: None)
+    monkeypatch.setattr(main.cv2, "waitKey", lambda *a: next(keys))
+    monkeypatch.setattr(main, "STILL_IMAGE_FPS", 1000.0)
+    monkeypatch.setattr(sys, "argv", ["src.main", "--image", str(src),
+                                      "--web-data-dir", str(tmp_path), "--output-dir", str(tmp_path)])
+    main.main()
+    status = json.loads((tmp_path / "status.json").read_text())
+    assert status["drill"]["id"] == "follow-shot"
