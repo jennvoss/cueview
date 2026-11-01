@@ -30,7 +30,6 @@ KNOWN_FAILURES = {
     ("found", "09b_near_every_pocket"): "red 3 in the shadow of the top-right pocket is darker than the red range allows",
     ("no_false_positives", "12_midgame"): _STRIPE_11_TWICE,
     ("no_false_positives", "13_cue_stick_b"): "player over the table: watch, arm and cue stick detected as balls; " + _STRIPE_11_TWICE,
-    ("cue", "05_stripes_white_up"): "blue-striped 10 lying white side up chosen as the cue ball",
     ("identity", "07_rack"): "yellow-striped 9 in the rack shows too little band to name, so it's an unknown stripe",
     ("identity", "05_stripes_white_up"): "stripes lying white side up: too little color showing to name them",
     ("identity", "06_solid_stripe_pairs"): "stripes lying white side up left unnamed or misnamed",

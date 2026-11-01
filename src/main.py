@@ -385,7 +385,6 @@ def main():
     )
     # table_polygon is only drawn while tuning; PolygonTuner sets it each frame
     renderer = OverlayRenderer(enabled=cfg["output"]["overlay"])
-    trail = deque(maxlen=30)
 
     polygon_tuner = None
     if polygon_tuning_enabled():
@@ -445,20 +444,13 @@ def main():
             scorekeeper.update_detections(detections, time.perf_counter(), player_present=player)
             drill.update(detections, time.perf_counter(), cfg["detection"].get("table_polygon"))
 
-            if cb:
-                trail.append(cb.center_px)
-
             shot = engine.update(cb, frame_index, time.perf_counter())
             if shot:
                 logger_output.log_shot(shot)
                 print_shot_summary(shot)
                 last_shot = shot
 
-            annotated = renderer.render(
-                undistorted,
-                tracked,
-                list(trail)
-            )
+            annotated = renderer.render(undistorted, tracked)
             cv2.imshow(APP_WINDOW, annotated)
 
             status_writer.tick()

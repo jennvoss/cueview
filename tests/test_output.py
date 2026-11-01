@@ -110,13 +110,13 @@ class TestOverlayRenderer:
     def test_render_disabled_returns_unmodified_frame(self):
         renderer = OverlayRenderer(enabled=False)
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        result = renderer.render(frame, [], [])
+        result = renderer.render(frame, [])
         assert np.array_equal(result, frame)
 
     def test_render_enabled_returns_modified_frame(self):
         renderer = OverlayRenderer(enabled=True)
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        result = renderer.render(frame, [], [])
+        result = renderer.render(frame, [])
         assert result is not None
         assert result.shape == frame.shape
 
@@ -132,17 +132,10 @@ class TestOverlayRenderer:
         renderer = OverlayRenderer(enabled=True)
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
         ball = MockBall(center_px=(320, 240), is_cue_ball=True, radius_px=15.0)
-        result = renderer.render(frame, [ball], [])
+        result = renderer.render(frame, [ball])
         assert result is not None
         assert result.shape == frame.shape
 
-    def test_render_with_trail(self):
-        renderer = OverlayRenderer(enabled=True)
-        frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        trail = [(100, 100), (110, 110), (120, 120)]
-        result = renderer.render(frame, [], trail)
-        assert result is not None
-        assert result.shape == frame.shape
 
     def test_smoothing_reduces_jitter(self):
         renderer = OverlayRenderer(enabled=True)
@@ -169,8 +162,8 @@ class TestOverlayRenderer:
 
         renderer = OverlayRenderer(enabled=True)
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
-        renderer.render(frame, [MockBall(1, (100, 100)), MockBall(2, (300, 300))], [])
-        renderer.render(frame, [MockBall(2, (300, 300))], [])
+        renderer.render(frame, [MockBall(1, (100, 100)), MockBall(2, (300, 300))])
+        renderer.render(frame, [MockBall(2, (300, 300))])
         assert set(renderer._smoothed_centers) == {2}
 
     def test_toggle(self):

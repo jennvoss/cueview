@@ -6,7 +6,8 @@ seen for SINK_AFTER_S, and only counts as back on the table (e.g. after a re-rac
 has been seen continuously for RETURN_AFTER_S. With update_detections, each spot on the
 table is named by majority vote over its recent readings, so a ball that is now and then
 misread as another number doesn't keep that other ball on the table. A stripe too unclear
-to number (UNKNOWN_STRIPE) keeps the most recently seen missing stripe on the table.
+to number (UNKNOWN_STRIPE) keeps the most recently seen missing stripe on the table, and
+brings back a stripe counted as sunk when there are more unknown stripes than missing ones.
 """
 import math
 from collections import Counter, deque
@@ -100,11 +101,17 @@ class ScoreKeeper:
             return
         # A stripe lying white side up with too little color to name is still a stripe on
         # the table: each one keeps the most recently seen missing stripe from being sunk.
+        # More unknown stripes than that means stripes counted as sunk are really on the
+        # table (e.g. capture started with them white side up): those come back, most
+        # recently seen first, once they've been "seen" this way for RETURN_AFTER_S.
         unknown = sum(1 for ball in balls_seen if ball == UNKNOWN_STRIPE)
-        missing = sorted((b for b in STRIPES if b not in seen and self.on_table[b]),
-                         key=lambda b: self.last_seen.get(b, timestamp), reverse=True)
+        recent_first = lambda b: self.last_seen.get(b, float("-inf"))
+        missing = sorted((b for b in STRIPES if b not in seen and self.on_table[b]), key=recent_first, reverse=True)
         for ball in missing[:unknown]:
             self.last_seen[ball] = timestamp
+        if unknown > len(missing):
+            sunk = sorted((b for b in STRIPES if b not in seen and not self.on_table[b]), key=recent_first, reverse=True)
+            seen.update(sunk[:unknown - len(missing)])
         for ball in ALL_BALLS:
             if ball in seen:
                 self.last_seen[ball] = timestamp

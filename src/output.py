@@ -88,7 +88,6 @@ class OverlayRenderer:
         self,
         frame: np.ndarray,
         tracked_balls: List,
-        trail: List[Tuple[float, float]],
     ) -> np.ndarray:
         if not self.enabled:
             return frame
@@ -115,17 +114,6 @@ class OverlayRenderer:
         for track_id in list(self._smoothed_centers):
             if track_id not in live_ids:
                 del self._smoothed_centers[track_id]
-
-        if len(trail) > 1:
-            for i in range(len(trail) - 1):
-                pt1 = tuple(int(x) for x in trail[i])
-                pt2 = tuple(int(x) for x in trail[i + 1])
-
-                alpha = (i + 1) / len(trail)
-                color_intensity = int(255 * alpha)
-                color = (0, color_intensity, 255)
-
-                cv2.line(frame, pt1, pt2, color, 1)
 
         return frame
 

@@ -167,12 +167,15 @@ def test_unknown_stripes_keep_recently_seen_stripes():
     assert 15 in snap["stripes_sunk"]
 
 
-def test_unknown_stripe_does_not_revive_a_sunk_stripe():
+def test_unknown_stripe_brings_back_the_only_missing_stripe():
+    """With every other stripe accounted for, an unnameable stripe on the table is the 15."""
     keeper = ScoreKeeper(sink_after_s=3.0, warmup_s=0.5)
-    t = feed(keeper, {"cue", 8, 15}, 1.0, 0.0)
-    t = feed(keeper, {"cue", 8}, 4.0, t)
-    t = feed(keeper, ["cue", 8, "stripe"], 3.0, t)
+    others = {"cue", 8, 9, 10, 11, 12, 13, 14}
+    t = feed(keeper, others | {15}, 1.0, 0.0)
+    t = feed(keeper, others, 4.0, t)
     assert 15 in keeper.snapshot()["stripes_sunk"]
+    feed(keeper, list(others) + ["stripe"], 1.5, t)
+    assert 15 in keeper.snapshot()["on_table"]
 
 
 def test_player_over_table_pauses_scoring():
@@ -194,3 +197,17 @@ def test_player_over_table_pauses_scoring():
     feed_detections(keeper, [after] * int(3.0 * FPS), t)
     snap = keeper.snapshot()
     assert 15 in snap["stripes_sunk"] and 3 in snap["on_table"]
+
+
+def test_start_with_stripes_white_side_up():
+    """Capture starts with three stripes white side up (unnameable) and four unaccounted for:
+    the count is restored (six stripes on, one sunk), though which numbers can't be known."""
+    keeper = ScoreKeeper(warmup_s=1.5, return_after_s=1.0)
+    frame = ["cue", 7, 11, 13, 14, "stripe", "stripe", "stripe"]
+    t = feed(keeper, frame, 1.6, 0.0)
+    assert keeper.snapshot()["stripes_sunk"] == [9, 10, 12, 15]  # right after warm-up nothing is known
+    feed(keeper, frame, 1.5, t)
+    snap = keeper.snapshot()
+    assert len([b for b in snap["on_table"] if isinstance(b, int) and b > 8]) == 6
+    assert len(snap["stripes_sunk"]) == 1
+    assert {11, 13, 14} <= set(snap["on_table"])

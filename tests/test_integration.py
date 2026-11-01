@@ -6,7 +6,6 @@ import tempfile
 import numpy as np
 import cv2
 from pathlib import Path
-from collections import deque
 from dataclasses import dataclass
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -404,8 +403,6 @@ class TestIT_SYN_05:
         engine = MetricsEngine(calibration, expected_radius_px)
         renderer = OverlayRenderer(enabled=True)
 
-        trail = deque(maxlen=30)
-
         exception_raised = False
         try:
             for frame_idx in range(len(frames)):
@@ -415,19 +412,12 @@ class TestIT_SYN_05:
                 tracked = tracker.update(detections)
                 cb = tracker.cue_ball()
 
-                if cb:
-                    trail.append(cb.center_px)
-
                 shot = engine.update(cb, frame_idx, frame_idx / 60.0)
 
                 if frame_idx == 30:
                     renderer.toggle()
 
-                annotated = renderer.render(
-                    undistorted.copy(),
-                    tracked,
-                    list(trail),
-                )
+                annotated = renderer.render(undistorted.copy(), tracked)
 
                 assert annotated is not None, f"Rendered frame is None at frame {frame_idx}"
                 assert isinstance(annotated, np.ndarray), f"Rendered frame is not ndarray at frame {frame_idx}"

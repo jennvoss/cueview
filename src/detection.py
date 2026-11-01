@@ -315,23 +315,19 @@ def _detect_balls(
             merged[key] = detected_circles[key]
     detected_circles = merged
 
-    # The cue ball is the whitest candidate with the least of any other color. A
-    # stripe lying white side up usually still shows its band near the edge, so
-    # color in the rim (inside the ball) counts against it too.
-    colored_mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
-    for label, m in masks_by_label.items():
-        if label != "cue_ball":
-            colored_mask |= m
+    # The cue ball is the white ball with no band. A stripe lying white side up still
+    # shows some band just inside its edge, even when too little to name it: band pixels
+    # are colored or dark, but not cloth (which shows where the circle overlaps it).
+    hue, sat, val = hsv[..., 0], hsv[..., 1], hsv[..., 2]
+    is_white = (sat <= 75) & (val >= 140)
+    is_cloth = ((hue >= 165) | (hue < 12)) & (sat >= 130) & (val >= 60) & (val <= 115)
+    band_mask = ((~is_white & ((sat >= 50) | (val < 100)) & ~is_cloth) * 255).astype(np.uint8)
 
-    def cue_score(key):
-        center = (key[0], key[1])
-        others = [fraction_on_table(m, center, key[2])
-                  for label, m in masks_by_label.items() if label != "cue_ball"]
-        rim = fraction_on_table(colored_mask, center, 1.1 * expected_radius_px, 0.65 * expected_radius_px)
-        return coverage[key] - max(others, default=0.0) - rim
+    def rim_band(key):
+        return fraction_on_table(band_mask, (key[0], key[1]), 0.92 * expected_radius_px, 0.58 * expected_radius_px)
 
     cue_keys = [key for key, label in detected_circles.items() if label == "cue_ball"]
-    best_cue_key = max(cue_keys, key=cue_score) if cue_keys else None
+    best_cue_key = min(cue_keys, key=lambda k: (rim_band(k), -coverage[k])) if cue_keys else None
 
     def resolve_blue_purple(center, radius, color_label):
         """Blue and purple ranges overlap; pick by the median hue of those pixels instead."""

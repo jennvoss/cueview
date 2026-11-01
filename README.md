@@ -75,7 +75,7 @@ python3 -m src.main --image tests/fixtures/table/12_midgame.png
 | Key | Action |
 |---|---|
 | `q` | Quit |
-| `o` | Toggle overlay (HUD, ball annotations, trail) |
+| `o` | Toggle overlay (ball circles) |
 | `t` | Set the current cue-ball position as a target — the next shot will report accuracy |
 | `s` | Save the raw frame (no overlay) as a PNG to `tests/fixtures/table/` |
 | `p` | Print the current `table_polygon` as YAML (only with `TUNE_TABLE_POLYGON=true`) |
