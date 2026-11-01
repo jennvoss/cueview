@@ -101,7 +101,13 @@ async function pollStatus() {
   }
   setStatus(s.status === "running" ? "running" : "idle");
   renderLiveState(s);
-  renderScore(s.score || null);
+  // Capture just started and is still working out which balls are on the table.
+  const reading = Boolean(s.score && s.score.ready === false);
+  renderScore(reading ? null : s.score || null);
+  if (reading) {
+    $("score-note").hidden = false;
+    $("score-note").textContent = "Reading the table…";
+  }
 }
 
 let feedLoaded = false;

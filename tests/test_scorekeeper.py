@@ -12,11 +12,35 @@ def feed(keeper, seen, seconds, start):
     return t
 
 
-def test_starts_with_every_ball_on_table():
-    snap = ScoreKeeper().snapshot()
-    assert snap["on_table"] == ALL_BALLS
-    assert snap["solids_sunk"] == [] and snap["stripes_sunk"] == []
-    assert snap["eight_sunk"] is False and snap["cue_sunk"] is False
+def test_no_score_until_warmed_up():
+    """At startup nothing is reported, rather than every ball flashing onto the table."""
+    keeper = ScoreKeeper(warmup_s=1.5)
+    snap = keeper.snapshot()
+    assert snap["ready"] is False
+    assert snap["on_table"] == [] and snap["solids_sunk"] == [] and snap["stripes_sunk"] == []
+    feed(keeper, {"cue", 8}, 1.0, 0.0)
+    assert keeper.snapshot()["ready"] is False
+
+
+def test_first_score_matches_the_table():
+    """Balls missing during warm-up are sunk in the very first score, with no 3 s wait."""
+    keeper = ScoreKeeper(warmup_s=1.5, sink_after_s=3.0)
+    feed(keeper, {"cue", 1, 8, 12}, 1.6, 0.0)
+    snap = keeper.snapshot()
+    assert snap["ready"] is True
+    assert snap["on_table"] == ["cue", 1, 8, 12]
+    assert snap["solids_sunk"] == [2, 3, 4, 5, 6, 7]
+    assert 12 not in snap["stripes_sunk"] and len(snap["stripes_sunk"]) == 6
+
+
+def test_warmup_ignores_occasional_misread():
+    """A ball named in only a few warm-up frames (a misread) starts sunk."""
+    keeper = ScoreKeeper(warmup_s=1.5)
+    t = 0.0
+    for i in range(int(1.6 * FPS)):
+        keeper.update(["cue", 12] + ([8] if i % 6 == 0 else []), t)
+        t += 1 / FPS
+    assert keeper.snapshot()["eight_sunk"] is True
 
 
 def test_ball_sunk_after_missing_long_enough():
@@ -52,9 +76,9 @@ def test_ball_returns_after_seen_continuously():
 
 
 def test_unknown_balls_ignored():
-    keeper = ScoreKeeper()
-    keeper.update([None, 99, "cue"], 0.0)
-    assert keeper.snapshot()["on_table"] == ALL_BALLS
+    keeper = ScoreKeeper(warmup_s=0.5)
+    feed(keeper, [None, 99, "cue"], 1.0, 0.0)
+    assert keeper.snapshot()["on_table"] == ["cue"]
 
 
 def test_full_game_split():

@@ -26,6 +26,11 @@ RETURN_AFTER_S = 1.0
 # readings, so an occasional misread (a band-up 12 read as the 8) doesn't keep a sunk ball
 # on the table. Detections within NAME_VOTE_RADIUS_PX of each other are the same spot.
 NAME_VOTE_WINDOW_S = 2.0
+# At startup the scorekeeper watches for WARMUP_S before reporting a score (the dashboard
+# shows "reading the table" meanwhile); a ball seen in at least WARMUP_MIN_SEEN_FRACTION of
+# those frames starts on the table, the rest start sunk.
+WARMUP_S = 1.5
+WARMUP_MIN_SEEN_FRACTION = 0.3
 NAME_VOTE_RADIUS_PX = 12.0
 # A ball is on the table only if more than this fraction of its disc lies inside
 # detection.table_polygon; otherwise it is in a pocket and ignored.
