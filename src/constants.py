@@ -31,6 +31,27 @@ NAME_VOTE_WINDOW_S = 2.0
 # those frames starts on the table, the rest start sunk.
 WARMUP_S = 1.5
 WARMUP_MIN_SEEN_FRACTION = 0.3
+# Drills (src/drills.py). A ball counts as on its mark within DRILL_PLACE_TOLERANCE_IN and
+# must sit there DRILL_SETTLE_S before the drill is ready. The shot starts when the cue ball
+# moves DRILL_MOVE_THRESHOLD_IN off its mark and ends once nothing has moved for DRILL_REST_S
+# (or after DRILL_SHOT_TIMEOUT_S). The cue ball's finish is rated perfect within
+# DRILL_PERFECT_IN of its target and good within DRILL_GOOD_IN.
+DRILL_PLACE_TOLERANCE_IN = 2.25
+DRILL_SETTLE_S = 1.0
+DRILL_MOVE_THRESHOLD_IN = 1.5
+DRILL_REST_S = 1.5
+DRILL_SHOT_TIMEOUT_S = 15.0
+DRILL_PERFECT_IN = 2.25
+DRILL_GOOD_IN = 6.0
+# While a drill shot rolls, a detection only counts as the object ball if it could have got
+# there: within DRILL_MAX_BALL_SPEED_IN_S (a hard hit) of its last position, over at most
+# DRILL_MAX_TRACK_GAP_S, plus a ball's width. Otherwise, after the object ball drops, a
+# mislabelled cue ball or hand elsewhere on the table gets taken for it.
+DRILL_MAX_BALL_SPEED_IN_S = 150.0
+DRILL_MAX_TRACK_GAP_S = 0.25
+# A pocketed object ball last seen farther than this from every pocket (lost mid-roll) is
+# assigned to the pocket it was heading toward instead of the nearest one.
+DRILL_POCKET_NEAR_IN = 10.0
 NAME_VOTE_RADIUS_PX = 12.0
 # A ball is on the table only if more than this fraction of its disc lies inside
 # detection.table_polygon; otherwise it is in a pocket and ignored.

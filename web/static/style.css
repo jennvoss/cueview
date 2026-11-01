@@ -11,6 +11,8 @@ body {
 
 header {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 10px;
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
@@ -220,14 +222,10 @@ code#cal-dist {
   font-weight: 600;
 }
 
+header .nav-links { margin-left: auto; margin-right: 16px; padding-left: 16px; display: flex; gap: 4px; }
 header .nav-link {
-  margin-left: auto;
-  margin-right: 16px;
-  padding-left: 16px;
-  white-space: nowrap;
-  color: #8fb3d9;
-  text-decoration: none;
-  font-size: 13px;
+  color: #8fb3d9; text-decoration: none; font-size: 13px; white-space: nowrap;
+  padding: 5px 10px; border-radius: 6px;
 }
-
-header .nav-link:hover { text-decoration: underline; }
+header .nav-link:hover { background: #1a2330; }
+header .nav-link[aria-current="page"] { color: #d8dee4; background: #1a2330; font-weight: 600; }

@@ -8,7 +8,7 @@
 <body>
   <header>
     <h1>CueView <span class="subtitle">Debug</span></h1>
-    <a class="nav-link" href="{{ url_for('index') }}">Scoreboard →</a>
+    {% include "_nav.html" %}
     <div class="status-pill" id="status-pill" data-state="idle">
       <span class="dot"></span>
       <span id="status-label">IDLE</span>

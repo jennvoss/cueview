@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CueView — Drills</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='scoreboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='drills.css') }}">
+</head>
+<body>
+  <header>
+    <h1>CueView <span class="game">Drills</span></h1>
+    {% include "_nav.html" %}
+    <div class="status-pill" id="status-pill" data-state="idle">
+      <span class="dot"></span>
+      <span id="status-label">IDLE</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div class="live">
+      <section class="feed" aria-label="Camera feed with drill targets">
+        <img id="feed" alt="Camera view of the table">
+        <svg class="drill-overlay" id="overlay" viewBox="0 0 1280 720" aria-hidden="true"></svg>
+        <div class="feed-badge" id="feed-badge" hidden></div>
+        <div class="feed-empty" id="feed-empty">No camera feed yet. Start capture with <code>python3 -m src.main</code>.</div>
+      </section>
+
+      <article class="group drill-state" id="drill-state">
+        <div class="state-line" id="state-line">Loading drill…</div>
+      </article>
+
+      <article class="group result" id="result" hidden>
+        <h2>Last shot <span class="count" id="result-rating"></span></h2>
+        <div class="result-headline" id="result-headline"></div>
+        <ul class="result-notes" id="result-notes"></ul>
+      </article>
+    </div>
+
+    <section class="score drill-info" aria-label="Drill instructions">
+      <article class="group">
+        <h2 id="drill-name">Drill</h2>
+        <p class="drill-summary" id="drill-summary"></p>
+        <ol class="steps" id="steps"></ol>
+      </article>
+
+      <article class="group">
+        <h2>Where to hit the cue ball</h2>
+        <div class="tip-row">
+          <svg class="tip-diagram" id="tip-diagram" viewBox="-60 -60 120 120" aria-hidden="true">
+            <circle class="tip-ball" r="50"/>
+            <line class="tip-axis" x1="-50" y1="0" x2="50" y2="0"/>
+            <line class="tip-axis" x1="0" y1="-50" x2="0" y2="50"/>
+            <circle class="tip-dot" id="tip-dot" r="9"/>
+          </svg>
+          <p id="tip-text"></p>
+        </div>
+      </article>
+
+      <article class="group">
+        <h2>Speed</h2>
+        <div class="speed-meter" id="speed-meter" aria-hidden="true"></div>
+        <p class="speed-text" id="speed-text"></p>
+      </article>
+
+      <article class="group compact">
+        <h2>This session</h2>
+        <div class="stats">
+          <div><span id="stat-attempts">0</span> <em id="stat-attempts-label">shots</em></div>
+          <div><span id="stat-made">0</span> pocketed</div>
+          <div><span id="stat-perfect">0</span> perfect</div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='drills.js') }}"></script>
+</body>
+</html>

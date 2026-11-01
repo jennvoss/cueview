@@ -40,8 +40,13 @@ header {
 }
 header h1 { margin: 0; font-size: 18px; font-weight: 600; }
 header h1 .game { color: var(--muted); font-weight: 400; margin-left: 6px; }
-.nav-link { margin-left: auto; color: var(--accent); text-decoration: none; font-size: 13px; }
-.nav-link:hover { text-decoration: underline; }
+.nav-links { margin-left: auto; display: flex; gap: 4px; }
+.nav-link {
+  color: var(--accent); text-decoration: none; font-size: 13px;
+  padding: 5px 10px; border-radius: 6px;
+}
+.nav-link:hover { background: #1a2330; }
+.nav-link[aria-current="page"] { color: var(--text); background: #1a2330; font-weight: 600; }
 
 .status-pill {
   display: inline-flex; align-items: center; gap: 8px;

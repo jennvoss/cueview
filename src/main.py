@@ -20,6 +20,7 @@ from src.tracking import BallTracker
 from src.metrics import MetricsEngine
 from src.output import SessionLogger, OverlayRenderer
 from src.scorekeeper import ScoreKeeper
+from src.drills import DrillTracker
 
 
 def identity_calibration() -> dict:
@@ -180,6 +181,7 @@ class StatusWriter:
 
     def write(self, frame_index: int, tracked: list, detections: list,
               engine: MetricsEngine, last_shot, annotated_frame, score: dict = None,
+              drill: dict = None,
               raw_frame=None) -> None:
         try:
             tracked_balls = []
@@ -234,6 +236,7 @@ class StatusWriter:
                 "detections": detections_info,
                 "score": score,
                 "source": self.source,
+                "drill": drill,
             }
             with open(self.status_tmp, "w") as f:
                 json.dump(status, f)
@@ -375,6 +378,7 @@ def main():
     )
     engine = MetricsEngine(calibration, expected_radius_px)
     scorekeeper = ScoreKeeper()
+    drill = DrillTracker()
     logger_output = SessionLogger(
         cfg["output"]["log_file"],
         cfg["output"]["flush_interval_s"]
@@ -438,6 +442,7 @@ def main():
             tracked = tracker.update(detections)
             cb = tracker.cue_ball()
             scorekeeper.update_detections(detections, time.perf_counter())
+            drill.update(detections, time.perf_counter(), cfg["detection"].get("table_polygon"))
 
             if cb:
                 trail.append(cb.center_px)
@@ -461,7 +466,7 @@ def main():
                 # capture window only.
                 status_writer.write(
                     frame_index, tracked, detections, engine, last_shot, undistorted,
-                    score=scorekeeper.snapshot(), raw_frame=undistorted,
+                    score=scorekeeper.snapshot(), drill=drill.snapshot(), raw_frame=undistorted,
                 )
 
             key = cv2.waitKey(1) & 0xFF

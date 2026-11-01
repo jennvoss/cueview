@@ -6,6 +6,7 @@ import numpy as np
 from flask import Flask, jsonify, render_template, send_file
 
 from src.config_loader import load_config
+from src.drills import DRILLS, DrillTracker
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config" / "config.yaml"
@@ -28,6 +29,27 @@ def index():
 @app.route("/debug")
 def debug():
     return render_template("debug.html")
+
+
+@app.route("/drills")
+def drills():
+    return render_template("drills.html")
+
+
+@app.route("/api/drills/<drill_id>")
+def api_drill(drill_id):
+    """A drill's instructions and marks on this table, available without capture running."""
+    drill = DRILLS.get(drill_id)
+    if drill is None:
+        return jsonify({"error": f"unknown drill {drill_id}"}), 404
+    tracker = DrillTracker(drill)
+    try:
+        polygon = load_config(str(CONFIG_PATH))["detection"].get("table_polygon")
+    except FileNotFoundError:
+        polygon = None
+    if polygon:
+        tracker.update([], 0.0, polygon)
+    return jsonify(tracker.snapshot())
 
 
 @app.route("/api/config")

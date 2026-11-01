@@ -1,0 +1,56 @@
+/* Drills page: builds on scoreboard.css (header, layout, feed, groups, balls). */
+
+.drill-overlay {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.drill-overlay .mark { fill: none; stroke-width: 3; stroke-dasharray: 7 5; }
+.drill-overlay .mark.cue { stroke: #f7f3e8; }
+.drill-overlay .mark.object { stroke: var(--warn); }
+.drill-overlay .mark.placed { stroke: var(--ok); stroke-dasharray: none; }
+.drill-overlay .aim { stroke: rgba(255, 255, 255, 0.55); stroke-width: 2; stroke-dasharray: 4 6; }
+.drill-overlay .target { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.drill-overlay .label {
+  fill: #fff; font: 600 17px -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  paint-order: stroke; stroke: rgba(0, 0, 0, 0.75); stroke-width: 4px;
+}
+.drill-overlay .end { stroke: #000; stroke-width: 2; }
+.drill-overlay .end.cue { fill: #f7f3e8; }
+.drill-overlay .end.object { fill: var(--warn); }
+
+.drill-state .state-line { font-size: 15px; font-weight: 600; }
+.drill-state[data-state="ready"] .state-line { color: var(--ok); }
+.drill-state[data-state="shot"] .state-line { color: var(--accent); }
+
+.result .result-headline { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.result[data-rating="perfect"] .result-headline,
+.result[data-rating="good"] .result-headline { color: var(--ok); }
+.result[data-rating="missed"] .result-headline,
+.result[data-rating="scratch"] .result-headline { color: var(--warn); }
+.result-notes { margin: 0; padding-left: 18px; line-height: 1.5; }
+.result-notes li + li { margin-top: 6px; }
+
+.drill-info p { margin: 0; line-height: 1.5; }
+.drill-summary { margin-bottom: 10px !important; }
+.steps { margin: 0; padding-left: 20px; line-height: 1.5; }
+.steps li + li { margin-top: 6px; }
+.steps li.done { color: var(--muted); }
+.steps li.done::after { content: " ✓"; color: var(--ok); font-weight: 700; }
+
+.tip-row { display: flex; gap: 16px; align-items: center; }
+.tip-diagram { width: 96px; height: 96px; flex: none; }
+.tip-ball { fill: var(--ball-white); }
+.tip-axis { stroke: rgba(0, 0, 0, 0.18); stroke-width: 1.5; }
+.tip-dot { fill: #2b6cb0; stroke: #fff; stroke-width: 3; }
+
+.speed-meter { display: flex; gap: 6px; margin-bottom: 10px; }
+.speed-meter span {
+  flex: 1; height: 10px; border-radius: 3px; background: #1f2933;
+}
+.speed-meter span.on { background: var(--accent); }
+.speed-text { color: var(--text); }
+
+.stats { display: flex; gap: 20px; color: var(--muted); }
+.stats span { color: var(--text); font-weight: 700; font-size: 16px; }
+.stats em { font-style: normal; }
