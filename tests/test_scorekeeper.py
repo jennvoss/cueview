@@ -64,3 +64,53 @@ def test_full_game_split():
     assert snap["solids_sunk"] == SOLIDS
     assert snap["stripes_sunk"] == STRIPES
     assert snap["on_table"] == ["cue", 8]
+
+
+class Det:
+    def __init__(self, ball, x, y):
+        self.ball, self.center_px = ball, (x, y)
+
+
+def feed_detections(keeper, frames, start, fps=FPS):
+    t = start
+    for dets in frames:
+        keeper.update_detections(dets, t)
+        t += 1 / fps
+    return t
+
+
+def test_misread_ball_does_not_keep_sunk_ball_on_table():
+    """The 12 sits still and is read as the 8 about 1 frame in 4; the real 8 is in a pocket."""
+    keeper = ScoreKeeper(sink_after_s=3.0)
+    frames = [[Det("cue", 877, 479), Det(8 if i % 4 == 0 else 12, 366, 520)] for i in range(int(6 * FPS))]
+    feed_detections(keeper, frames, 0.0)
+    snap = keeper.snapshot()
+    assert 12 in snap["on_table"]
+    assert 8 not in snap["on_table"]
+    assert snap["eight_sunk"] is True
+
+
+def test_rarely_detected_ball_keeps_its_name():
+    """A ball found only every third frame (like a hard-to-see maroon 7) still counts as on the table."""
+    keeper = ScoreKeeper(sink_after_s=3.0)
+    frames = [[Det("cue", 500, 300)] + ([Det(7, 353, 486)] if i % 3 == 0 else []) for i in range(int(6 * FPS))]
+    feed_detections(keeper, frames, 0.0)
+    assert 7 in keeper.snapshot()["on_table"]
+
+
+def test_separate_balls_keep_separate_names():
+    """Touching balls (two radii apart) are different spots, so neither outvotes the other."""
+    keeper = ScoreKeeper(sink_after_s=3.0)
+    frames = [[Det("cue", 100, 100), Det(3, 500, 300), Det(11, 524, 300)] for _ in range(int(5 * FPS))]
+    feed_detections(keeper, frames, 0.0)
+    on_table = keeper.snapshot()["on_table"]
+    assert 3 in on_table and 11 in on_table
+
+
+def test_ball_rolling_to_new_spot_keeps_its_name():
+    """A ball moving a few pixels per frame stays one spot; a far jump starts a new spot."""
+    keeper = ScoreKeeper(sink_after_s=3.0)
+    frames = [[Det("cue", 100, 100), Det(5, 300 + 4 * i, 300)] for i in range(int(4 * FPS))]
+    feed_detections(keeper, frames, 0.0)
+    assert 5 in keeper.snapshot()["on_table"]
+    assert len(keeper.spots) == 2

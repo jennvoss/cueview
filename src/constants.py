@@ -22,6 +22,11 @@ STRIPE_MIN_WHITE = 0.10
 # as back on the table once it has been seen continuously for RETURN_AFTER_S.
 SINK_AFTER_S = 3.0
 RETURN_AFTER_S = 1.0
+# A ball in one spot is named by majority vote over its last NAME_VOTE_WINDOW_S of
+# readings, so an occasional misread (a band-up 12 read as the 8) doesn't keep a sunk ball
+# on the table. Detections within NAME_VOTE_RADIUS_PX of each other are the same spot.
+NAME_VOTE_WINDOW_S = 2.0
+NAME_VOTE_RADIUS_PX = 12.0
 # A ball is on the table only if more than this fraction of its disc lies inside
 # detection.table_polygon; otherwise it is in a pocket and ignored.
 ON_TABLE_MIN_FRACTION = 0.5
@@ -32,8 +37,9 @@ ISOLATION_RING_MAX_FRACTION = 0.4
 # A detected circle must be at least this full of its own color; Hough circles on
 # shadow smears at pocket mouths are mostly empty.
 MIN_COLOR_COVERAGE = 0.3
-# Shadows at pocket mouths are black too, so the "black" label needs a fuller circle:
-# measured shadow false positives fill at most 0.39, real 8 balls at least 0.75.
+# Shadows at pocket mouths are black too, so the "black" label needs a fuller circle, of
+# black pixels only (white doesn't count, unlike stripes): measured shadow false positives
+# fill at most 0.39, a dark-banded 12 about 0.25, real 8 balls at least 0.75.
 MIN_BLACK_COVERAGE = 0.6
 # A colored (non-cue) circle must also be at least this full of its own color, or
 # it's a white ball seen through a loose range rather than that color.

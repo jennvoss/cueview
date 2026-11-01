@@ -437,7 +437,7 @@ def main():
             detections = detect_balls(undistorted, cfg["detection"], expected_radius_px)
             tracked = tracker.update(detections)
             cb = tracker.cue_ball()
-            scorekeeper.update((d.ball for d in detections), time.perf_counter())
+            scorekeeper.update_detections(detections, time.perf_counter())
 
             if cb:
                 trail.append(cb.center_px)

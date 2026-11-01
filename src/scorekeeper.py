@@ -1,13 +1,17 @@
 """8-ball scorekeeper: which balls are on the table and which have been sunk.
 
-Fed the set of ball numbers detected in each frame. Single frames are unreliable (motion
-blur, a player's arm, an occasional misread), so a ball only counts as sunk after it
-hasn't been seen for SINK_AFTER_S, and only counts as back on the table (e.g. after a
-re-rack) once it has been seen continuously for RETURN_AFTER_S.
+Fed the balls detected in each frame. Single frames are unreliable (motion blur, a
+player's arm, an occasional misread), so a ball only counts as sunk after it hasn't been
+seen for SINK_AFTER_S, and only counts as back on the table (e.g. after a re-rack) once it
+has been seen continuously for RETURN_AFTER_S. With update_detections, each spot on the
+table is named by majority vote over its recent readings, so a ball that is now and then
+misread as another number doesn't keep that other ball on the table.
 """
+import math
+from collections import Counter, deque
 from typing import Iterable, Optional, Union
 
-from src.constants import SINK_AFTER_S, RETURN_AFTER_S
+from src.constants import SINK_AFTER_S, RETURN_AFTER_S, NAME_VOTE_WINDOW_S, NAME_VOTE_RADIUS_PX
 
 SOLIDS = list(range(1, 8))
 STRIPES = list(range(9, 16))
@@ -24,6 +28,39 @@ class ScoreKeeper:
         self.on_table = {ball: True for ball in ALL_BALLS}
         self.last_seen: dict = {}
         self.seen_since: dict = {}
+        self.spots: list = []  # [{"pos": (x, y), "votes": deque[(timestamp, ball)]}]
+
+    def update_detections(self, detections: Iterable, timestamp: float) -> None:
+        """Feed a frame's detections (anything with .ball and .center_px). Each is matched to
+        the nearest recent spot within NAME_VOTE_RADIUS_PX and named by that spot's majority."""
+        named = []
+        used = set()
+        for det in detections:
+            if det.ball is None:
+                continue
+            pos = (float(det.center_px[0]), float(det.center_px[1]))
+            spot = min((s for i, s in enumerate(self.spots) if i not in used
+                        and math.dist(s["pos"], pos) <= NAME_VOTE_RADIUS_PX),
+                       key=lambda s: math.dist(s["pos"], pos), default=None)
+            if spot is None:
+                spot = {"pos": pos, "votes": deque()}
+                self.spots.append(spot)
+            used.add(next(i for i, s in enumerate(self.spots) if s is spot))
+            spot["pos"] = pos
+            spot["votes"].append((timestamp, det.ball))
+            named.append(spot)
+        for spot in self.spots:
+            while spot["votes"] and timestamp - spot["votes"][0][0] > NAME_VOTE_WINDOW_S:
+                spot["votes"].popleft()
+        self.spots = [s for s in self.spots if s["votes"]]
+        self.update([self._majority(spot) for spot in named], timestamp)
+
+    @staticmethod
+    def _majority(spot) -> Ball:
+        counts = Counter(ball for _, ball in spot["votes"])
+        top = max(counts.values())
+        # On a tie, the most recent of the tied names wins.
+        return next(ball for _, ball in reversed(spot["votes"]) if counts[ball] == top)
 
     def update(self, balls_seen: Iterable[Optional[Ball]], timestamp: float) -> None:
         seen = {ball for ball in balls_seen if ball in self.on_table}

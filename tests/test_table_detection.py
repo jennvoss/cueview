@@ -26,10 +26,8 @@ CASES = sorted(p.stem for p in TABLE_DIR.glob("*.json"))
 # (check, image) -> reason it fails today
 _STRIPE_11_TWICE = "red-striped 11 also picked up as a second, offset maroon circle"
 KNOWN_FAILURES = {
-    ("found", "07_rack"): "purple-striped 12 inside the rack not detected",
     ("found", "08_rails"): "maroon-striped 15 against the right cushion not detected",
     ("found", "09b_near_every_pocket"): "red 3 in the shadow of the top-right pocket is darker than the red range allows",
-    ("no_false_positives", "07_rack"): "crowded rack: an extra blue circle between balls",
     ("no_false_positives", "12_midgame"): _STRIPE_11_TWICE,
     ("no_false_positives", "13_cue_stick_b"): "player over the table: watch, arm and cue stick detected as balls; " + _STRIPE_11_TWICE,
     ("cue", "05_stripes_white_up"): "blue-striped 10 lying white side up chosen as the cue ball",

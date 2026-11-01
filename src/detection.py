@@ -244,10 +244,12 @@ def _detect_balls(
             center = (circle_key[0], circle_key[1])
             own = {label: fraction_on_table(m, center, circle_key[2])
                    for label, m in masks_by_label.items() if label != "cue_ball"}
-            best = max(own, key=own.get, default=None)
-            if best is not None and own[best] >= MIN_OWN_COLOR:
-                detected_circles[circle_key + (best,)] = best
-            elif "cue_ball" in masks_by_label:
+            # Offer every color with enough presence (a dark-banded stripe is nearly as
+            # black as purple); the fill and highlight checks below pick the one that holds.
+            colors = [label for label, fill in own.items() if fill >= MIN_OWN_COLOR]
+            for label in colors:
+                detected_circles[circle_key + (label,)] = label
+            if not colors and "cue_ball" in masks_by_label:
                 detected_circles[circle_key + ("cue_ball",)] = "cue_ball"
 
     if table_polygon:
@@ -268,8 +270,10 @@ def _detect_balls(
     # Stripes are part white, so a colored circle's fill counts white pixels too.
     white_mask = masks_by_label.get("cue_ball")
 
+    # The 8 is a solid with only a small number circle, so black counts black pixels
+    # alone; otherwise a dark-banded stripe (the 12 band-up) passes as the 8.
     fill_masks = {
-        label: m if label == "cue_ball" or white_mask is None else m | white_mask
+        label: m if label in ("cue_ball", "black") or white_mask is None else m | white_mask
         for label, m in masks_by_label.items()
     }
 
