@@ -35,7 +35,6 @@ KNOWN_FAILURES = {
     ("cue", "05_stripes_white_up"): "blue-striped 10 lying white side up chosen as the cue ball",
     ("identity", "05_stripes_white_up"): "stripes lying white side up: too little color showing to name them",
     ("identity", "06_solid_stripe_pairs"): "stripes lying white side up left unnamed or misnamed",
-    ("identity", "07_rack"): "crowded rack: orange-striped 13 read as the 15",
     ("identity", "13_cue_stick_b"): "9 lying white side up left unnamed",
 }
 

@@ -50,3 +50,8 @@ MAROON_MIN_HIGHLIGHT = 25
 # The blue and purple hsv_ranges overlap, so a ball found by either is named by the
 # median hue of its blue/purple pixels. Measured medians: blue 2/10 112-114, purple 4/12 117-120.
 BLUE_PURPLE_HUE_SPLIT = 116
+# Extra circle search on how far each pixel is from the local cloth color, for balls
+# nearly the cloth's color (the maroon 7/15). It needs a stricter Hough threshold than the
+# color masks: at 25 it finds ~46 candidates per frame and every live 7; at 10 it finds ~960.
+OFF_CLOTH_GAIN = 3.0
+OFF_CLOTH_HOUGH_PARAM2 = 25

@@ -9,6 +9,7 @@ from src.constants import (
     MIN_COLOR_COVERAGE, MIN_BLACK_COVERAGE, MIN_OWN_COLOR,
     BALL_NUMBERS_BY_COLOR, STRIPE_MIN_WHITE,
     CLOTH_REFERENCE_BGR, CLOTH_GAIN_LIMITS, MAROON_MIN_HIGHLIGHT, BLUE_PURPLE_HUE_SPLIT,
+    OFF_CLOTH_GAIN, OFF_CLOTH_HOUGH_PARAM2,
 )
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,18 @@ def highlight_above_surroundings(value: np.ndarray, center: tuple, radius: float
     return float(np.percentile(disc, 97)) - float(np.median(ring))
 
 
+def off_cloth_image(frame: np.ndarray) -> np.ndarray:
+    """How far each pixel's color is from the cloth around it (summed per-channel difference
+    from a smoothed local background), as uint8. Balls, including the maroon ones that are
+    nearly the cloth's color, show up as rings from their shading and shadow."""
+    small = cv2.resize(frame, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
+    background = cv2.resize(cv2.medianBlur(small, 15), (frame.shape[1], frame.shape[0]),
+                            interpolation=cv2.INTER_LINEAR)
+    diff = cv2.absdiff(frame, background)
+    total = cv2.transform(diff, np.full((1, 3), OFF_CLOTH_GAIN, dtype=np.float32))
+    return cv2.GaussianBlur(total, (5, 5), 0)
+
+
 def compute_expected_radius_px(calibration: dict) -> float:
     """
     Use homography inverse to convert BALL_DIAMETER_IN to pixel radius.
@@ -186,14 +199,14 @@ def _detect_balls(
     detected_circles = {}
     masks_by_label = {}
 
-    def hough(mask):
+    def hough(mask, param2=hough_param2):
         circles = cv2.HoughCircles(
             mask,
             cv2.HOUGH_GRADIENT,
             dp=hough_dp,
             minDist=hough_min_dist,
             param1=hough_param1,
-            param2=hough_param2,
+            param2=param2,
             minRadius=int(min_radius),
             maxRadius=int(max_radius),
         )
@@ -215,13 +228,17 @@ def _detect_balls(
             detected_circles[circle_key + (color_label,)] = color_label
 
     # A stripe is only part of a circle in its color mask and part in the white one;
-    # their union is a full disc. Label those circles by their strongest color.
+    # their union is a full disc. Balls nearly the cloth's color (maroon) are speckled in
+    # every mask but stand out as rings in off_cloth_image. Label both by strongest color.
     if masks_by_label:
         any_ball = np.zeros(hsv.shape[:2], dtype=np.uint8)
         for m in masks_by_label.values():
             any_ball |= m
         found = {key[:3] for key in detected_circles}
-        for circle_key in hough(any_ball):
+        off_cloth = off_cloth_image(frame)
+        if near_table is not None:
+            off_cloth &= near_table
+        for circle_key in hough(any_ball) + hough(off_cloth, OFF_CLOTH_HOUGH_PARAM2):
             if circle_key in found:
                 continue
             center = (circle_key[0], circle_key[1])
