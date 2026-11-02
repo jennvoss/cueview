@@ -68,6 +68,7 @@ image, pass it directly:
 
 ```bash
 python3 -m src.main --image tests/fixtures/table/12_midgame.png
+python3 -m src.main --image tests/fixtures/table/13_cue_stick_a.png
 ```
 
 ### Keyboard controls (with the capture window focused)
@@ -183,3 +184,12 @@ All unit and integration suites should pass green from a clean checkout.
   `--status-interval` isn't `0`.
 - **Frame image doesn't refresh** — confirm `outputs/latest.jpg` exists and
   that you didn't pass `--no-frame-dump`.
+
+## License
+
+CueView is source-available under the [MIT License](LICENSE) with the
+[Commons Clause](https://commonsclause.com/) condition. You're free to use,
+copy, modify and share it, but not to sell it or a product or service whose
+value comes mainly from it (including paid hosting or support). See
+[LICENSE](LICENSE) for the full terms. For commercial licensing, contact
+the author at jennifervoss.com 
